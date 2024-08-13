@@ -20,6 +20,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const response = await fetch('https://iike8cfke9.execute-api.sa-east-1.amazonaws.com/prod/temperatures?device_id=Device001');
+        console.log(response)
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }

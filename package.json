@@ -1,7 +1,7 @@
 {
+  "homepage": "https://wagner-coldtag.github.io/interface",
   "name": "react-admin",
   "version": "0.1.0",
-  "homepage": "https://github.com/wagner-coldtag/interface",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.10.4",
