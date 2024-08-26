@@ -5,7 +5,7 @@ import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Header from "../../components/Header";
-import LineChart from "../../components/LineChart";
+import Chart from "../../components/LineChart";
 import StatBox from "../../components/StatBox";
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import CoronavirusIcon from '@mui/icons-material/Coronavirus';
@@ -15,76 +15,95 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
 
   const [data, setData] = useState([]);
+  const [devices, setDevices] = useState([]);
+  const [selectedDevice, setSelectedDevice] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://iike8cfke9.execute-api.sa-east-1.amazonaws.com/prod/temperatures?device_id=Device001');
-        console.log(response)
+        const response = await fetch('https://vygk3womq2.execute-api.sa-east-1.amazonaws.com/prod/temperatures?company=DumbCompany');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const jsonData = await response.json();
         const fetchedData = JSON.parse(jsonData.body);
-        const formattedData = formatData(fetchedData); // Helper function to format data for Nivo
-        console.log('Fetched and formatted data:', formattedData); // Debugging line
-        setData(formattedData);
-
+    
+        // Sort data by timestamp in ascending order
+        const sortedData = fetchedData.sort((a, b) => a.timestamp - b.timestamp);
+    
+        // Extract unique devices
+        const uniqueDevices = [...new Set(sortedData.map(item => item.device_id))];
+        setDevices(uniqueDevices);
+    
+        // Set default device
+        if (uniqueDevices.length > 0 && selectedDevice === null) {
+          setSelectedDevice(uniqueDevices[0]);
+        }
+    
+        // Format data for the selected device
+        const formatData = (deviceData) => {
+          return [
+            {
+              id: "temperature",
+              color: "hsl(214, 70%, 50%)",
+              data: deviceData
+                .filter(item => item.timestamp && !isNaN(item.timestamp)) 
+                .map(item => ({
+                  x: item.timestamp, // Keep the raw timestamp
+                  y: item.temperature,
+                  formattedX: formatTimestamp(item.timestamp), // Store formatted timestamp for display
+                }))
+            },
+            {
+              id: "N",
+              color: "hsl(153, 70%, 50%)",
+              data: deviceData
+                .filter(item => item.timestamp && !isNaN(item.timestamp)) 
+                .map(item => ({
+                  x: item.timestamp, // Keep the raw timestamp
+                  y: item.N,
+                  formattedX: formatTimestamp(item.timestamp), // Store formatted timestamp for display
+                }))
+            }
+          ];
+        };
+    
+        setData(formatData(sortedData.filter(item => item.device_id === selectedDevice)));
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
+    
 
     fetchData(); // Initial fetch
 
     const intervalId = setInterval(fetchData, 60000); // Fetch data every 60 seconds
 
     return () => clearInterval(intervalId); // Cleanup on unmount
-  }, []);
-
-  // Helper function to format the data for Nivo's Line Chart
-  const formatData = (fetchedData) => {
-    return [
-      {
-        id: "temperature",
-        color: "hsl(214, 70%, 50%)",
-        data: fetchedData
-          .filter(item => item.timestamp && !isNaN(item.timestamp)) // Filter out invalid timestamps
-          .map(item => ({
-            x: formatTimestamp(item.timestamp),
-            y: item.temperature,
-          })),
-      },
-      {
-        id: "N",
-        color: "hsl(153, 70%, 50%)",
-        data: fetchedData
-          .filter(item => item.timestamp && !isNaN(item.timestamp)) // Filter out invalid timestamps
-          .map(item => ({
-            x: formatTimestamp(item.timestamp),
-            y: item.N,
-          })),
-      }
-    ];
-  };
+  }, [selectedDevice]); // Refetch data when selectedDevice changes
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp || isNaN(timestamp)) {
+      console.error("Invalid timestamp:", timestamp);
       return "Invalid Date"; // Handle invalid timestamp
     }
-    const date = new Date(timestamp * 1000);
+  
+    const date = new Date(timestamp * 1000); // Assuming timestamp is in seconds
+  
+    if (isNaN(date.getTime())) {
+      console.error("Date creation failed for timestamp:", timestamp);
+      return "Invalid Date";
+    }
+  
     return date.toLocaleString();
   };
 
   // Check the structure of data before accessing it
-  console.log('Current data state:', data); // Debugging line
-
   const lastTemperature = data.length > 0 && data[0]?.data.length > 0
-  ? data[0].data[data[0].data.length - 1]?.y?.toFixed(1) 
-  : 0;  
+    ? data[0].data[data[0].data.length - 1]?.y?.toFixed(1) 
+    : 0;  
   const temperatureColor = lastTemperature > 10 ? colors.redAccent[500] : colors.greenAccent[500];
 
-  // Update this line with proper checks
   const lastMicrobialLoad = data.length > 1 && data[1]?.data.length > 0 
     ? data[1].data[data[1].data.length - 1]?.y?.toFixed(1) 
     : 0;
@@ -96,14 +115,14 @@ const Dashboard = () => {
 
   let timePassed = 0;
   if (data[0]?.data.length > 1) {
-    const firstTimestamp = data[0].data[0].x;
-    const lastTimestamp = data[0].data[data[0].data.length - 1].x;
-
+    const firstTimestamp = data[0].data[0].x * 1000; // Convert to milliseconds
+    const lastTimestamp = data[0].data[data[0].data.length - 1].x * 1000; // Convert to milliseconds
+  
     const firstDate = new Date(firstTimestamp);
     const lastDate = new Date(lastTimestamp);
-
+    
     const timeDifference = lastDate - firstDate;
-
+  
     const minutesPassed = Math.floor(timeDifference / 60000);
     const secondsPassed = Math.floor((timeDifference % 60000) / 1000);
     timePassed = { minutes: minutesPassed, seconds: secondsPassed };
@@ -132,6 +151,21 @@ const Dashboard = () => {
             Download Reports
           </Button>
         </Box>
+      </Box>
+
+      {/* DEVICE BUTTONS */}
+      <Box mt="20px">
+        {devices.map((device) => (
+          <Button
+            key={device}
+            variant={device === selectedDevice ? "contained" : "outlined"}
+            color="primary"
+            onClick={() => setSelectedDevice(device)}
+            sx={{ mr: "10px" }}
+          >
+            Device {device}
+          </Button>
+        ))}
       </Box>
 
       {/* GRID & CHARTS */}
@@ -224,7 +258,6 @@ const Dashboard = () => {
               />
             }
           />
-          )
         </Box>
 
         {/* ROW 2 */}
@@ -265,7 +298,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="-20px 0 0 0">
-            <LineChart isDashboard={true} data={data} />
+            <Chart isDashboard={true} data={data} />
           </Box>
         </Box>
 
@@ -289,7 +322,7 @@ const Dashboard = () => {
           </Box>
           {data.length > 0 && data[0].data.length > 0 && data[0].data.slice(-10).map((measurement, i) => (
             <Box
-              key={`${measurement.x}`}
+              key={`${measurement.x}-${measurement.y}`}
               display="flex"
               justifyContent="space-between"
               alignItems="center"
@@ -302,13 +335,12 @@ const Dashboard = () => {
                   variant="h5"
                   fontWeight="600"
                 >
-                  Truck 1
+                  {selectedDevice}
                 </Typography>
                 <Typography color={colors.grey[100]}>
-                  Thermostat 1
+                  {formatTimestamp(measurement.x)}
                 </Typography>
               </Box>
-              <Box color={colors.grey[100]}>{measurement.x}</Box>
               <Box
                 backgroundColor={colors.greenAccent[500]}
                 p="5px 10px"
