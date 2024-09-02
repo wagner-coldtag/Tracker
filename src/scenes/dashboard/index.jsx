@@ -26,6 +26,7 @@ const Dashboard = () => {
           throw new Error('Network response was not ok');
         }
         const jsonData = await response.json();
+
         const fetchedData = JSON.parse(jsonData.body);
     
         // Sort data by timestamp in ascending order
@@ -39,7 +40,6 @@ const Dashboard = () => {
         if (uniqueDevices.length > 0 && selectedDevice === null) {
           setSelectedDevice(uniqueDevices[0]);
         }
-    
         // Format data for the selected device
         const formatData = (deviceData) => {
           return [
@@ -48,11 +48,14 @@ const Dashboard = () => {
               color: "hsl(214, 70%, 50%)",
               data: deviceData
                 .filter(item => item.timestamp && !isNaN(item.timestamp)) 
-                .map(item => ({
-                  x: item.timestamp, // Keep the raw timestamp
-                  y: item.temperature,
-                  formattedX: formatTimestamp(item.timestamp), // Store formatted timestamp for display
-                }))
+                .map(item => {
+                  console.log(item.temperature); // Log the temperature value
+                  return {
+                    x: item.timestamp, // Keep the raw timestamp
+                    y: item.temperature,
+                    formattedX: formatTimestamp(item.timestamp), // Store formatted timestamp for display
+                  };
+                })
             },
             {
               id: "N",
@@ -67,7 +70,6 @@ const Dashboard = () => {
             }
           ];
         };
-    
         setData(formatData(sortedData.filter(item => item.device_id === selectedDevice)));
       } catch (error) {
         console.error('Error fetching data:', error);

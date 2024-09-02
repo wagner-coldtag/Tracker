@@ -17,6 +17,8 @@ import Logo from './Logo.png';
 //import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+
 //import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
@@ -137,6 +139,13 @@ const Sidebar = () => {
               title="Line Chart"
               to="/line"
               icon={<TimelineOutlinedIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="Voltage Analysis"
+              to="/voltage"
+              icon={<FlashOnIcon />}
               selected={selected}
               setSelected={setSelected}
             />
