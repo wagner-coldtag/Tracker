@@ -7,6 +7,8 @@ import Line from "./scenes/line";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
 import Voltage from './scenes/dashboard/Voltage'
+import RSSI from './scenes/dashboard/RSSI'
+
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -24,6 +26,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/line" element={<Line />} />
               <Route path="/voltage" element={<Voltage />} />
+              <Route path="/rssi" element={<RSSI />} />
+
             </Routes>
           </main>
         </div>

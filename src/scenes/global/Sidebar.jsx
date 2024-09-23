@@ -5,7 +5,9 @@ import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import Logo from './Logo.png';
+import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
+
+import Logo from './Logo.jpeg';
 
 //import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 //import ContactsOutlinedIcon from "@mui/icons-material/ContactsOutlined";
@@ -99,7 +101,7 @@ const Sidebar = () => {
               <img
                 alt="profile-user"
                 width="100px"
-                height="100px"
+                height="60px"
                 src={Logo}
                 style={{ cursor: "pointer", borderRadius: "50%" }}
               />
@@ -146,6 +148,13 @@ const Sidebar = () => {
               title="Voltage Analysis"
               to="/voltage"
               icon={<FlashOnIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="RSSI"
+              to="/RSSI"
+              icon={<SignalWifi4BarIcon />}
               selected={selected}
               setSelected={setSelected}
             />
