@@ -156,7 +156,7 @@ const Dashboard = () => {
       </Box>
 
       {/* DEVICE BUTTONS */}
-      <Box mt="20px">
+      <Box>
         {devices.map((device) => (
           <Button
             key={device}
@@ -176,6 +176,7 @@ const Dashboard = () => {
         gridTemplateColumns="repeat(12, 1fr)"
         gridAutoRows="140px"
         gap="20px"
+        mt="20px"
       >
         {/* ROW 1 */}
         <Box
