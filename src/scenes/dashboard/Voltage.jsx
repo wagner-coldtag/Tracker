@@ -4,6 +4,9 @@ import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import StatBox from "../../components/StatBox";
 import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
+import * as XLSX from 'xlsx'; // Import xlsx
+import DownloadIcon from '@mui/icons-material/Download';
+
 import {
   LineChart,
   Line,
@@ -97,6 +100,21 @@ const Voltage = () => {
     setSelectedDevice(device);
   };
 
+  const downloadExcel = () => {
+    if (data.length === 0) return;
+
+    const worksheetData = data[0].data.map((item) => ({
+      Timestamp: formatTimestamp(item.x),
+      Voltage: item.y,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "VoltageData");
+
+    XLSX.writeFile(workbook, "Voltage_report.xlsx");
+  };
+
   const transformedData = data[0]?.data.map((tempPoint) => {
     const time = new Date(tempPoint.x * 1000).toISOString();
     const Voltage = typeof tempPoint.y === 'number' ? tempPoint.y : 0;
@@ -177,7 +195,29 @@ const Voltage = () => {
             backgroundColor={colors.primary[400]}
             p="20px"
             height="260px"
+            position="relative"
           >
+            <Box position="absolute" top={5} right={5}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={downloadExcel} // Add onClick event
+                sx={{
+                  borderRadius: '50%',
+                  minWidth: '30px',
+                  minHeight: '30px',
+                  padding: '0',
+                  backgroundColor: colors.primary[400],
+                  color: colors.grey[400],
+                  '&:hover': {
+                    backgroundColor: colors.greenAccent[400],
+                    color: colors.primary[400], // Adjust hover color as per theme
+                  },
+                }}
+              >
+                <DownloadIcon />
+              </Button>
+            </Box>
             <Box >
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={transformedData} margin={{ top: 20, right: 0, bottom: 50, left: 20 }}>

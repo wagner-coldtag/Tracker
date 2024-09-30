@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
+import { Box, Button, IconButton, Typography, useTheme, useMediaQuery } from "@mui/material";
 import { tokens } from "../../theme";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -9,10 +9,13 @@ import Chart from "../../components/LineChart";
 import StatBox from "../../components/StatBox";
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import CoronavirusIcon from '@mui/icons-material/Coronavirus';
+import * as XLSX from 'xlsx'; // Import xlsx
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // Check if the screen is small
+
 
   const [data, setData] = useState([]);
   const [devices, setDevices] = useState([]);
@@ -99,6 +102,20 @@ const Dashboard = () => {
   
     return date.toLocaleString();
   };
+  const downloadExcel = () => {
+    if (data.length === 0) return;
+
+    const worksheetData = data[0].data.map((item) => ({
+      Timestamp: formatTimestamp(item.x),
+      Temperature: item.y,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "TemperatureData");
+
+    XLSX.writeFile(workbook, "temperature_report.xlsx");
+  };
 
   // Check the structure of data before accessing it
   const lastTemperature = data.length > 0 && data[0]?.data.length > 0
@@ -133,6 +150,31 @@ const Dashboard = () => {
   const timePassedString = timePassed
     ? `${timePassed.minutes}m ${timePassed.seconds}s`
     : "No Data";
+  
+  if (isSmallScreen) {
+      // Render only the chart on small screens
+      return (
+        <Box m="20px">
+          <Box height="400px">
+            <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
+            <Box>
+        {devices.map((device) => (
+          <Button
+            key={device}
+            variant={device === selectedDevice ? "contained" : "outlined"}
+            color="primary"
+            onClick={() => setSelectedDevice(device)}
+            sx={{ mr: "10px" }}
+          >
+            Device {device}
+          </Button>
+        ))}
+      </Box>
+            <Chart isDashboard={true} data={data} />
+          </Box>
+        </Box>
+      );
+    }
 
   return (
     <Box m="20px">
@@ -140,7 +182,8 @@ const Dashboard = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
         <Box>
-          <Button
+        <Button
+            onClick={downloadExcel} // Add onClick event
             sx={{
               backgroundColor: colors.blueAccent[700],
               color: colors.grey[100],

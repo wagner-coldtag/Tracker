@@ -3,6 +3,7 @@ import { Box, Button, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import StatBox from "../../components/StatBox";
+import DownloadIcon from '@mui/icons-material/Download';
 import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
 import {
   LineChart,
@@ -17,6 +18,8 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import * as XLSX from 'xlsx'; // Import xlsx
+
 
 const RSSI = () => {
   const theme = useTheme();
@@ -29,6 +32,21 @@ const RSSI = () => {
     currentDate.setMonth(currentDate.getMonth() - 1);  // Subtract one month
     return currentDate;
   });  const [endDate, setEndDate] = useState(new Date());
+
+  const downloadExcel = () => {
+    if (data.length === 0) return;
+
+    const worksheetData = data[0].data.map((item) => ({
+      Timestamp: formatTimestamp(item.x),
+      RSSI: item.y,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "RSSIData");
+
+    XLSX.writeFile(workbook, "RSSI_report.xlsx");
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -176,7 +194,30 @@ const RSSI = () => {
             backgroundColor={colors.primary[400]}
             p="20px"
             height="260px"
+            position="relative"
+
           >
+            <Box position="absolute" top={5} right={5}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={downloadExcel} // Add onClick event
+                sx={{
+                  borderRadius: '50%',
+                  minWidth: '30px',
+                  minHeight: '30px',
+                  padding: '0',
+                  backgroundColor: colors.primary[400],
+                  color: colors.grey[400],
+                  '&:hover': {
+                    backgroundColor: colors.greenAccent[400],
+                    color: colors.primary[400], // Adjust hover color as per theme
+                  },
+                }}
+              >
+                <DownloadIcon />
+              </Button>
+            </Box>
             <Box >
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={transformedData} margin={{ top: 20, right: 0, bottom: 50, left: 20 }}>
