@@ -10,6 +10,7 @@ import Logo from './Logo.jpeg';
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import FlashOnIcon from '@mui/icons-material/FlashOn';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -149,6 +150,13 @@ const Sidebar = () => {
               title="RSSI"
               to="/RSSI"
               icon={<SignalWifi4BarIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="Package Analysis"
+              to="/package"
+              icon={<Inventory2Icon />}
               selected={selected}
               setSelected={setSelected}
             />

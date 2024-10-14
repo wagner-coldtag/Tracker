@@ -149,7 +149,7 @@ const Package = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box m="20px">
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Header title="ANÁLISE DE TENSÃO" subtitle="Panorama geral da tensão" />
+          <Header title="ANÁLISE DE PACOTES" subtitle="Panorama geral de pacotes perdidos" />
         </Box>
 
         <Box display="flex" justifyContent="space-between" alignItems="center">

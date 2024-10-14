@@ -8,11 +8,7 @@ import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
 import Voltage from './scenes/dashboard/Voltage'
 import RSSI from './scenes/dashboard/RSSI'
-<<<<<<< HEAD
-
-=======
 import Package from './scenes/dashboard/Packages'
->>>>>>> 077f198 (Added packages and faster visualization)
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -31,11 +27,8 @@ function App() {
               <Route path="/line" element={<Line />} />
               <Route path="/voltage" element={<Voltage />} />
               <Route path="/rssi" element={<RSSI />} />
-<<<<<<< HEAD
-=======
               <Route path="/package" element={<Package />} />
 
->>>>>>> 077f198 (Added packages and faster visualization)
 
             </Routes>
           </main>
