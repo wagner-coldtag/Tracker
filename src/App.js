@@ -3,14 +3,19 @@ import { Routes, Route } from "react-router-dom";
 import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
+import Account from "./scenes/auth/Account";
 import Line from "./scenes/line";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
-import Voltage from './scenes/dashboard/Voltage'
-import RSSI from './scenes/dashboard/RSSI'
+import Voltage from "./scenes/dashboard/Voltage";
+import RSSI from "./scenes/dashboard/RSSI";
+import Auth from "./scenes/auth/Auth";
+import Package from "./scenes/dashboard/Packages";
+import { UserState } from "./context/UserProvider";
+import ChangePassword from "./scenes/auth/ChangePassword";
 
-
-function App() {
+function App () {
+  const { loggedIn } = UserState();
   const [theme, colorMode] = useMode();
   const [isSidebar, setIsSidebar] = useState(true);
 
@@ -18,19 +23,28 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <div className="app">
-          <Sidebar isSidebar={isSidebar} />
-          <main className="content">
-            <Topbar setIsSidebar={setIsSidebar} />
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/line" element={<Line />} />
-              <Route path="/voltage" element={<Voltage />} />
-              <Route path="/rssi" element={<RSSI />} />
+        {loggedIn? (
+          <div className="app">
+            <Sidebar isSidebar={isSidebar} />
+            <main className="content">
+              <Topbar setIsSidebar={setIsSidebar} />
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/auth" element={<Dashboard />} />
+                <Route path="/account" element={<Account />} />
 
-            </Routes>
-          </main>
-        </div>
+                <Route path="/line" element={<Line />} />
+                <Route path="/voltage" element={<Voltage />} />
+                <Route path="/rssi" element={<RSSI />} />
+                <Route path="/package" element={<Package />} />
+                <Route path="/change-password" element={<ChangePassword />} />  {/* Add this route */}
+
+              </Routes>
+            </main>
+          </div>
+        ):(
+          <Auth />
+        )}
       </ThemeProvider>
     </ColorModeContext.Provider>
   );

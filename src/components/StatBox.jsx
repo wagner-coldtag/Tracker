@@ -12,7 +12,6 @@ const StatBox = ({ titleColor, title, subtitle, icon, progress, increase, progre
             variant="h4"
             fontWeight="bold"
             sx={{ color: titleColor }}
-            
           >
             {title}
           </Typography>

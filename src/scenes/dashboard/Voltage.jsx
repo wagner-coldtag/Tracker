@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Button, useTheme } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Box, Button, useTheme,IconButton } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import StatBox from "../../components/StatBox";
-import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
-import * as XLSX from 'xlsx'; // Import xlsx
-import DownloadIcon from '@mui/icons-material/Download';
-
+import SignalWifi4BarIcon from "@mui/icons-material/SignalWifi4Bar";
+import * as XLSX from "xlsx"; // Import xlsx
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import {
   LineChart,
   Line,
@@ -16,10 +15,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+} from "recharts";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
 const Voltage = () => {
   const theme = useTheme();
@@ -37,22 +36,21 @@ const Voltage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://vygk3womq2.execute-api.sa-east-1.amazonaws.com/prod/temperatures?company=DumbCompany');
+        const response = await fetch("https://vygk3womq2.execute-api.sa-east-1.amazonaws.com/prod/temperatures?company=DumbCompany");
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error("Network response was not ok");
         }
         const jsonData = await response.json();
-        console.log(jsonData);
-  
+
         const fetchedData = JSON.parse(jsonData.body);
         const sortedData = fetchedData.sort((a, b) => a.timestamp - b.timestamp);
         const uniqueDevices = [...new Set(sortedData.map(item => item.device_id))];
         setDevices(uniqueDevices);
-  
+
         if (uniqueDevices.length > 0 && selectedDevice === null) {
           setSelectedDevice(uniqueDevices[0]);
         }
-  
+
         const formatData = (deviceData) => {
           return [
             {
@@ -75,17 +73,17 @@ const Voltage = () => {
             }
           ];
         };
-  
+
         setData(formatData(sortedData.filter(item => item.device_id === selectedDevice)));
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
       }
     };
-  
+
     fetchData();
     const intervalId = setInterval(fetchData, 60000);
     return () => clearInterval(intervalId);
-  }, [selectedDevice, startDate, endDate]); 
+  }, [selectedDevice, startDate, endDate]);
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp * 1000);
@@ -95,10 +93,6 @@ const Voltage = () => {
   const lastVoltage = data.length > 0 && data[0]?.data.length > 0
     ? data[0].data[data[0].data.length - 1]?.y?.toFixed(1)
     : 0;
-
-  const handleButtonClick = (device) => {
-    setSelectedDevice(device);
-  };
 
   const downloadExcel = () => {
     if (data.length === 0) return;
@@ -117,7 +111,7 @@ const Voltage = () => {
 
   const transformedData = data[0]?.data.map((tempPoint) => {
     const time = new Date(tempPoint.x * 1000).toISOString();
-    const Voltage = typeof tempPoint.y === 'number' ? tempPoint.y : 0;
+    const Voltage = typeof tempPoint.y === "number" ? tempPoint.y : 0;
 
     return { time, Voltage };
   }) || [];
@@ -144,24 +138,40 @@ const Voltage = () => {
           />
         </Box>
 
-        <Box  mt="20px">
+        <Box
+          display="flex"
+          flexWrap="wrap"
+          gap="10px"  // Adds spacing between buttons
+          justifyContent="flex-start"  // Aligns buttons to the start
+          sx={{
+            "& > *": { // Makes all buttons the same size
+              minWidth: "120px", // Adjust width to desired size
+            },
+            mb: "20px", // Adds margin below the button group
+            mt: "20px",
+          }}
+        >
           {devices.map((device) => (
             <Button
               key={device}
               variant={device === selectedDevice ? "contained" : "outlined"}
-              onClick={() => handleButtonClick(device)}
+              color="primary"
+              onClick={() => setSelectedDevice(device)}
+
               sx={{
                 mr: "10px",
                 color: device === selectedDevice ? colors.primary[500] : colors.grey[100],
                 backgroundColor: device === selectedDevice ? colors.greenAccent[500] : colors.primary[400],
                 borderColor: colors.grey[100],
-                '&:hover': {
-                  backgroundColor: device === selectedDevice ? colors.greenAccent[600] : colors.primary[500],
-                  color: colors.grey[400],
+                "&:hover": {
+                  backgroundColor: device === selectedDevice ? colors.greenAccent[600] : colors.primary[900],
+                  color: colors.grey[300],
                 },
+                width: "170px", // Fixes the width of each button
+                height: "30px", // Optionally adjust the height
               }}
             >
-              Device {device}
+                Sensor {device}
             </Button>
           ))}
         </Box>
@@ -198,59 +208,51 @@ const Voltage = () => {
             position="relative"
           >
             <Box position="absolute" top={5} right={5}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={downloadExcel} // Add onClick event
-                sx={{
-                  borderRadius: '50%',
-                  minWidth: '30px',
-                  minHeight: '30px',
-                  padding: '0',
-                  backgroundColor: colors.primary[400],
-                  color: colors.grey[400],
-                  '&:hover': {
-                    backgroundColor: colors.greenAccent[400],
-                    color: colors.primary[400], // Adjust hover color as per theme
-                  },
-                }}
+              <IconButton onClick={downloadExcel} // Add onClick event
               >
-                <DownloadIcon />
-              </Button>
+                <DownloadOutlinedIcon
+                  sx={{ fontSize: "26px", color: colors.greenAccent[500] }}
+                />
+              </IconButton>
             </Box>
             <Box >
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={transformedData} margin={{ top: 20, right: 0, bottom: 50, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.grey[600]} />
-                  <XAxis 
-                    dataKey="time" 
-                    tickFormatter={(value) => new Date(value).toLocaleString()} 
-                    stroke={colors.grey[100]} 
-                    tick={{ fill: colors.grey[100] }} 
+                  <XAxis
+                    dataKey="time"
+                    tickFormatter={(value) => new Date(value).toLocaleString()}
+                    stroke={colors.grey[100]}
+                    tick={{ fill: colors.grey[100] }}
                     axisLine={{ stroke: colors.grey[600] }}
                   />
-                  <YAxis 
-                    yAxisId="left" 
-                    label={{ value: 'Tensão (V)', angle: -90, fill: colors.grey[100], dx: -40 }}
-                    stroke={colors.grey[100]} 
-                    tick={{ fill: colors.grey[100] }} 
+                  <YAxis
+                    yAxisId="left"
+                    label={{ value: "Tensão (V)", angle: -90, fill: colors.grey[100], dx: -40 }}
+                    stroke={colors.grey[100]}
+                    tick={{ fill: colors.grey[100] }}
                     axisLine={{ stroke: colors.grey[600] }}
                   />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: colors.primary[500], color: colors.grey[100] }} 
-                    labelStyle={{ color: colors.grey[100] }} 
+                  <Tooltip
+                    contentStyle={{ backgroundColor: colors.primary[500], color: colors.grey[300] }}
+                    labelStyle={{ color: "white"  }}
+                    itemStyle={{ color: "white"  }}
+                    labelFormatter={(label) => {
+                      const date = new Date(label).toLocaleDateString();
+                      const time = new Date(label).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                      return `${date}, ${time}`; // Combine date and time
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: colors.grey[100] }}
                     itemStyle={{ color: colors.grey[100] }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ color: colors.grey[100] }} 
-                    itemStyle={{ color: colors.grey[100] }} 
                     iconSize={12}
                   />
-                  <Line 
-                    yAxisId="left" 
-                    type="monotone" 
-                    dataKey="Voltage" 
-                    stroke={colors.greenAccent[500]} 
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="Voltage"
+                    stroke={colors.greenAccent[500]}
                     strokeWidth={2}
                     dot={false}
                   />

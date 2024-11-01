@@ -5,11 +5,11 @@ import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
-import Logo from './Logo.jpeg';
-import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
+import SignalWifi4BarIcon from "@mui/icons-material/SignalWifi4Bar";
+import Logo from "./Logo.png";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
-import FlashOnIcon from '@mui/icons-material/FlashOn';
+import FlashOnIcon from "@mui/icons-material/FlashOn";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -33,11 +33,10 @@ const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selected, setSelected] = useState("Dashboard");
+  const [selected, setSelected] = useState("Sensores");
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // Check if the screen is small
 
   useEffect(() => {
-    // Set isCollapsed to true if the screen size is small
     setIsCollapsed(isSmallScreen);
   }, [isSmallScreen]); // Run this effect whenever isSmallScreen changes
 
@@ -95,7 +94,7 @@ const Sidebar = () => {
                 <img
                   alt="profile-user"
                   width="100px"
-                  height="60px"
+                  height="100px"
                   src={Logo}
                   style={{ cursor: "pointer", borderRadius: "50%" }}
                 />
@@ -118,7 +117,7 @@ const Sidebar = () => {
 
           <Box paddingLeft={isCollapsed ? undefined : "10%"}>
             <Item
-              title="Dashboard"
+              title="Sensores"
               to="/"
               icon={<HomeOutlinedIcon />}
               selected={selected}
@@ -132,14 +131,14 @@ const Sidebar = () => {
               Charts
             </Typography>
             <Item
-              title="Line Chart"
-              to="/line"
-              icon={<TimelineOutlinedIcon />}
+              title="Pacotes"
+              to="/package"
+              icon={<Inventory2Icon />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Voltage Analysis"
+              title="Tensão"
               to="/voltage"
               icon={<FlashOnIcon />}
               selected={selected}
