@@ -1,23 +1,23 @@
 // AccountSettings.js
 import React, { useState } from "react";
-import axios from "axios";
 import { TextField, Button, Typography, Snackbar, Alert, Box } from "@mui/material";
 import { useDispatch } from "react-redux";
-import { checkPassword } from "../../actions/Auth";
-import { useSelector } from "react-redux";
+import { checkPassword, passwordChange } from "../../actions/Auth";
+import { useNavigate } from "react-router-dom";
 
 
 const AccountSettings = () => {
   const user = JSON.parse(localStorage.getItem("profile"));
   const [step, setStep] = useState(1); // Step 1: Verify password, Step 2: Update email/password
   const [currentPassword, setCurrentPassword] = useState("");
-  const [newEmail, setNewEmail] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
+  const [notification, setNotification] = useState({ text: "", severity: "error" });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState(null);
   const [alertType, setAlertType] = useState("success");
   const dispatch = useDispatch();
-  const { error } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
   const handlePasswordVerification = async () => {
     if (!currentPassword) {
@@ -27,37 +27,24 @@ const AccountSettings = () => {
     }
 
     try {
-      await dispatch(checkPassword(user?.user?.Email, currentPassword));
-      if (!error) {
+      const loginError = await dispatch(checkPassword(user?.Email, currentPassword));
+      if (!loginError) {
         setStep(2); // Move to the next step only if there was no error
       } else {
-        // If there's an error, display it.
-        setMessage(error);
-        setAlertType("error");
+        setNotification({ text: loginError, severity: "error" });
+        setShowNotification(true);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to verify password.";
-      setMessage(errorMessage);
-      setAlertType("error");
+      showAlert(error.message || "Action failed", "error");
+
     }
   };
 
-  const handleEmailChange = async () => {
-    if (!newEmail) {
-      setMessage("Please provide a new email.");
-      setAlertType("warning");
-      return;
-    }
-
-    try {
-      const response = await axios.post("/api/update-email", { newEmail });
-      setMessage(response.data.message || "Email updated successfully.");
-      setAlertType("success");
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to update email.");
-      setAlertType("error");
-    }
+  const showAlert = (text, severity) => {
+    setNotification({ text, severity });
+    setShowNotification(true);
   };
+
 
   const handlePasswordChange = async () => {
     if (!newPassword || !confirmPassword) {
@@ -73,9 +60,16 @@ const AccountSettings = () => {
     }
 
     try {
-      const response = await axios.post("/api/update-password", { newPassword });
-      setMessage(response.data.message || "Password updated successfully.");
-      setAlertType("success");
+      const loginError = await dispatch(passwordChange(user?.Email, newPassword));
+
+      if (!loginError) {
+        setNotification({ text: "Senha alterada com sucesso!", severity: "error" });
+        setShowNotification(true);
+        navigate("/");
+      } else {
+        setNotification({ text: loginError, severity: "error" });
+        setShowNotification(true);
+      }
     } catch (error) {
       setMessage(error.response?.data?.message || "Failed to update password.");
       setAlertType("error");
@@ -85,7 +79,7 @@ const AccountSettings = () => {
   return (
     <Box display="flex" flexDirection="column" alignItems="center" maxWidth="400px" mx="auto" mt={5}>
       <Typography variant="h4" gutterBottom>
-        Account Settings
+        Alterar senha
       </Typography>
 
       {step === 1 && (
@@ -96,31 +90,43 @@ const AccountSettings = () => {
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            fullWidth
             margin="normal"
+            sx={{ width: "300px",
+              "& .MuiOutlinedInput-root": {
+                height: "45px",
+                "& .MuiInputBase-input": {
+                  padding: "12px 14px", // Vertical centering
+                  fontSize: "1rem",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                },
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "1rem",
+                top: "-6px",
+                "&.Mui-focused": {
+                  color: "rgb(30,182,250)", // Light blue label color on focus
+                },
+              },
+            }}
           />
-          <Button variant="contained" color="primary" onClick={handlePasswordVerification} fullWidth>
+          <Button variant="contained" color="primary" onClick={handlePasswordVerification}
+            style={{ width: "300px", height: "45px", fontSize: "1rem", margin: "16px auto", display: "block", backgroundColor: "rgb(30,182,250)", color: "white" }}
+          >
             Verificar
           </Button>
+          <Snackbar open={showNotification} autoHideDuration={6000} onClose={() => setShowNotification(false)}>
+            <Alert onClose={() => setShowNotification(false)} severity={notification.severity}>
+              {notification.text}
+            </Alert>
+          </Snackbar>
         </>
       )}
 
       {/* Step 2: Update Email and Password */}
       {step === 2 && (
         <>
-          {/* Email Update Section */}
-          <TextField
-            label="New Email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            fullWidth
-            margin="normal"
-          />
-          <Button variant="contained" color="primary" onClick={handleEmailChange} fullWidth>
-            Change Email
-          </Button>
-
-          <Box my={4} width="100%" borderBottom={1} borderColor="grey.300" />
 
           {/* Password Reset Section */}
           <TextField
@@ -128,19 +134,55 @@ const AccountSettings = () => {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            fullWidth
-            margin="normal"
+            sx={{ width: "300px",
+              "& .MuiOutlinedInput-root": {
+                height: "45px",
+                "& .MuiInputBase-input": {
+                  padding: "12px 14px", // Vertical centering
+                  fontSize: "1rem",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                },
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "1rem",
+                top: "-6px",
+                "&.Mui-focused": {
+                  color: "rgb(30,182,250)", // Light blue label color on focus
+                },
+              },
+            }}
           />
           <TextField
             label="Confirm New Password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            fullWidth
-            margin="normal"
+            sx={{ width: "300px", mt: "20px",
+              "& .MuiOutlinedInput-root": {
+                height: "45px",
+                "& .MuiInputBase-input": {
+                  padding: "12px 14px", // Vertical centering
+                  fontSize: "1rem",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                },
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "1rem",
+                top: "-6px",
+                "&.Mui-focused": {
+                  color: "rgb(30,182,250)", // Light blue label color on focus
+                },
+              },
+            }}
           />
-          <Button variant="contained" color="secondary" onClick={handlePasswordChange} fullWidth>
-            Reset Password
+          <Button variant="contained" color="secondary" onClick={handlePasswordChange}
+            style={{ width: "300px", height: "45px", fontSize: "1rem", margin: "16px auto", display: "block", backgroundColor: "rgb(30,182,250)", color: "white" }}
+          >
+            Mudar senha
           </Button>
         </>
       )}

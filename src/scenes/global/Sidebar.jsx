@@ -4,12 +4,13 @@ import { Box, IconButton, Typography, useTheme, useMediaQuery } from "@mui/mater
 import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import SignalWifi4BarIcon from "@mui/icons-material/SignalWifi4Bar";
 import Logo from "./Logo.png";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
+import SensorsIcon from "@mui/icons-material/Sensors";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -109,20 +110,13 @@ const Sidebar = () => {
                   Coldtag
                 </Typography>
                 <Typography variant="h5" color={colors.greenAccent[500]}>
-                  Sensor Administration
+                  Administração de sensores
                 </Typography>
               </Box>
             </Box>
           )}
 
           <Box paddingLeft={isCollapsed ? undefined : "10%"}>
-            <Item
-              title="Sensores"
-              to="/"
-              icon={<HomeOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
             <Typography
               variant="h6"
               color={colors.grey[300]}
@@ -130,6 +124,13 @@ const Sidebar = () => {
             >
               Charts
             </Typography>
+            <Item
+              title="Temperatura"
+              to="/"
+              icon={<DeviceThermostatIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
             <Item
               title="Pacotes"
               to="/package"
@@ -148,6 +149,20 @@ const Sidebar = () => {
               title="RSSI"
               to="/RSSI"
               icon={<SignalWifi4BarIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Typography
+              variant="h6"
+              color={colors.grey[300]}
+              sx={{ m: "15px 0 5px 20px" }}
+            >
+              Sensores
+            </Typography>
+            <Item
+              title="Sensores"
+              to="/sensor"
+              icon={<SensorsIcon />}
               selected={selected}
               setSelected={setSelected}
             />

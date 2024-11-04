@@ -264,7 +264,7 @@ const Package = () => {
                       />
                       <YAxis
                         yAxisId="left"
-                        label={{ value: "Tensão (V)", angle: -90, fill: colors.grey[100], dx: -40 }}
+                        label={{ value: "Pacotes ", angle: -90, fill: colors.grey[100], dx: -40 }}
                         stroke={colors.grey[100]}
                         tick={{ fill: colors.grey[100] }}
                         axisLine={{ stroke: colors.grey[600] }}

@@ -4,6 +4,7 @@ import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
 import Account from "./scenes/auth/Account";
+import Sensors from "./scenes/sensors";
 import Line from "./scenes/line";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
@@ -32,9 +33,10 @@ function App () {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/auth" element={<Dashboard />} />
                 <Route path="/account" element={<Account />} />
-
                 <Route path="/line" element={<Line />} />
                 <Route path="/voltage" element={<Voltage />} />
+                <Route path="/sensor" element={<Sensors />} />
+
                 <Route path="/rssi" element={<RSSI />} />
                 <Route path="/package" element={<Package />} />
                 <Route path="/change-password" element={<ChangePassword />} />  {/* Add this route */}

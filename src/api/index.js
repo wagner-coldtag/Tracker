@@ -16,3 +16,22 @@ export const signIn = (email, password) => API.post("/", {
   action: "login", Email: email, Password: password
 },{ headers: { "Content-Type": "application/json" }
 });
+
+export const checkPassword = (email, password) => API.post("/", {
+  action: "checkPassword", Email: email, Password: password
+}, { headers: { "Content-Type": "application/json" }
+});
+
+export const passwordChange = (email, password) => {
+  console.log(email, password); // This will log the email and password to the console
+
+  // Now perform the API post request
+  return API.post("/", {
+    action: "updateUser",
+    Email: email,
+    Password: password
+  }, {
+    headers: { "Content-Type": "application/json" }
+  });
+};
+

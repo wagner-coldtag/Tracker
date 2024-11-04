@@ -26,14 +26,17 @@ const Chart = ({ data }) => {
     const time = new Date(tempPoint.x * 1000).toISOString(); // Convert to ISO string
     const temperatura = typeof tempPoint.y === "number" ? tempPoint.y.toFixed(1) : 0; // Ensure y is a number
     const N = data[1]?.data[index]?.y.toFixed(1) || 0; // Get corresponding N value
-
     return { time, temperatura, N };
   }) || [];
 
   // Calculate min and max for N axis
   const nValues = transformedData.map(d => d.N);
+  const TValues = transformedData.map(d => d.temperatura);
+
   const nMin = Math.floor(Math.min(...nValues));
   const nMax = 10; // Fixed maximum value for N axis
+  const TMin = Math.floor(Math.min(...TValues))-3;
+  const TMax = Math.floor(Math.max(...TValues))+3;
 
   if (transformedData.length === 0) {
     return <div>No valid data available for the chart.</div>; // Fallback if no valid dates exist
@@ -58,6 +61,8 @@ const Chart = ({ data }) => {
           stroke={colors.grey[100]}
           tick={{ fill: colors.grey[100] }}
           axisLine={{ stroke: colors.grey[600] }}
+          domain={[TMin, TMax]} // Set domain dynamically
+
         />
 
         {/* Secondary Y-Axis for N Values */}
