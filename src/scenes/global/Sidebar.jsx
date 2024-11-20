@@ -12,6 +12,7 @@ import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
 import SensorsIcon from "@mui/icons-material/Sensors";
 
+
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -54,10 +55,10 @@ const Sidebar = () => {
           padding: "5px 35px 5px 20px !important",
         },
         "& .pro-inner-item:hover": {
-          color: "#868dfb !important",
+          color: "rgb(0, 120, 180) !important",
         },
         "& .pro-menu-item.active": {
-          color: "#6870fa !important",
+          color: "rgb(42, 180, 234) !important",
         },
       }}
     >
@@ -68,7 +69,7 @@ const Sidebar = () => {
             onClick={() => setIsCollapsed(!isCollapsed)}
             icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
             style={{
-              margin: "10px 0 20px 0",
+              margin: "0 0 10px 0",
               color: colors.grey[100],
             }}
           >
@@ -77,7 +78,7 @@ const Sidebar = () => {
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
-                ml="15px"
+                ml="20px"
               >
                 <Typography variant="h3" color={colors.grey[100]}>
                   {/* Title or other content can go here */}
@@ -90,26 +91,26 @@ const Sidebar = () => {
           </MenuItem>
 
           {!isCollapsed && (
-            <Box mb="25px">
+            <Box mb="20px">
               <Box display="flex" justifyContent="center" alignItems="center">
                 <img
                   alt="profile-user"
-                  width="100px"
-                  height="100px"
+                  width="80px"
+                  height="80px"
                   src={Logo}
                   style={{ cursor: "pointer", borderRadius: "50%" }}
                 />
               </Box>
               <Box textAlign="center">
                 <Typography
-                  variant="h2"
+                  variant="h3"
                   color={colors.grey[100]}
                   fontWeight="bold"
                   sx={{ m: "10px 0 0 0" }}
                 >
                   Coldtag
                 </Typography>
-                <Typography variant="h5" color={colors.greenAccent[500]}>
+                <Typography variant="h6" color={colors.greenAccent[500]}>
                   Administração de sensores
                 </Typography>
               </Box>
@@ -118,7 +119,7 @@ const Sidebar = () => {
 
           <Box paddingLeft={isCollapsed ? undefined : "10%"}>
             <Typography
-              variant="h6"
+              variant="h7"
               color={colors.grey[300]}
               sx={{ m: "15px 0 5px 20px" }}
             >

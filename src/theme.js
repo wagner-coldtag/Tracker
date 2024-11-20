@@ -145,7 +145,6 @@ export const themeSettings = (mode) => {
           },
         }
         : {
-          // palette values for light mode
           primary: {
             main: colors.primary[100],
           },
