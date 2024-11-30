@@ -130,13 +130,13 @@ const RSSI = () => {
   const lastRSSI = data.length > 0 && data[0]?.data.length > 0
     ? data[0].data[data[0].data.length - 1]?.y?.toFixed(1)
     : 0;
-
   const transformedData = data[0]?.data.map((tempPoint) => {
-    const time = new Date(tempPoint.x * 1000).toISOString();
+    const time = tempPoint.x * 1000; // Keep `time` as a numeric timestamp in milliseconds
     const RSSI = typeof tempPoint.y === "number" ? tempPoint.y : 0;
-
     return { time, RSSI };
   }) || [];
+
+
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -244,10 +244,13 @@ const RSSI = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke={colors.grey[600]} />
                     <XAxis
                       dataKey="time"
-                      tickFormatter={(value) => new Date(value).toLocaleString()}
+                      type="number" // Use numeric values for the x-axis
+                      domain={["dataMin", "dataMax"]} // Optional: automatically adjust to the data range
+                      tickFormatter={(value) => new Date(value).toLocaleString()} // Format for readable labels
                       stroke={colors.grey[100]}
                       tick={{ fill: colors.grey[100] }}
-                      axisLine={{ stroke: colors.grey[600] }} />
+                      axisLine={{ stroke: colors.grey[600] }}
+                    />
                     <YAxis
                       yAxisId="left"
                       label={{ value: "RSSI (dBm)", angle: -90, fill: colors.grey[100], dx: -40 }}

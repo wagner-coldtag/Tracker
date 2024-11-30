@@ -70,6 +70,9 @@ const Dashboard = () => {
         {/* HEADER */}
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Header title="DASHBOARD" subtitle="Análise de sensores" />
+          <IconButton onClick={refreshDevices} sx={styles.iconButton}>
+            <RefreshIcon />
+          </IconButton>
           {selectedDevice && (!isSmallScreen && (
             <Box display="flex" alignItems="center" gap="10px">
               <IconButton onClick={refreshDevices} sx={styles.iconButton}>

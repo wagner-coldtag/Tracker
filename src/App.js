@@ -32,6 +32,7 @@ function App () {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/auth" element={<Dashboard />} />
+                <Route path="/Tracker" element={<Dashboard />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/line" element={<Line />} />
                 <Route path="/voltage" element={<Voltage />} />

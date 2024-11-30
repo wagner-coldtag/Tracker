@@ -40,6 +40,7 @@ const useFetchSensorData = () => {
       const company = user.Company;  // Get the user's company
       const response = await axios.get(`https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${company}`);
       const jsonData = response?.data || [];
+      console.log(response);
       setTypes([...new Set(jsonData.map(item => item.type))]);
 
       const fetchedDevices = jsonData.map((item) => item);
@@ -58,12 +59,13 @@ const useFetchSensorData = () => {
     const missingDevices = fetchedDevices.filter(
       (device) => !fetchedSensorData.some((sensor) => sensor.device_id === device)
     );
+    console.log(missingDevices);
 
     missingDevices.forEach(async (device) => {
       try {
         await axios.post("https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors", {
           device_id: device,
-          company: "Teste",
+          company: "Dumb_company",
           type: "miscelaneous"
         });
         console.log(`Device ${device} created successfully`);
@@ -87,7 +89,7 @@ const useFetchSensorData = () => {
       console.error("Date creation failed for timestamp:", timestamp);
       return "Invalid Date";
     }
-    return date.toLocaleString();
+    return date.toLocaleString(); // For display purposes
   };
 
   useEffect(() => {

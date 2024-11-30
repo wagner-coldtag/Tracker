@@ -12,7 +12,6 @@ import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
 import SensorsIcon from "@mui/icons-material/Sensors";
 
-
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -35,7 +34,7 @@ const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selected, setSelected] = useState("Sensores");
+  const [selected, setSelected] = useState("Temperature");
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // Check if the screen is small
 
   useEffect(() => {

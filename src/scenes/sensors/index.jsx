@@ -5,15 +5,19 @@ import { Box, Button, Typography, IconButton, useTheme, TextField, Dialog,
   DialogContentText,
   DialogTitle, } from "@mui/material";
 import { tokens } from "../../theme";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import Header from "../../components/Header";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import DeleteIcon from "@mui/icons-material/Delete"; // Icon for exclusion
 import axios from "axios";
 import SaveIcon from "@mui/icons-material/Save"; // Import the Save icon
+import useFetchSensorData from "../dashboard/utils/useFetchSensorData";
 
 const Sensors = () => {
   const theme = useTheme();
+  const { refreshDevices } = useFetchSensorData();
+
   const [sensorType, setSensorType] = useState("");
   const [pH, setPH] = useState("");  // State for pH
   const [aw, setAw] = useState("");  // State for aw
@@ -133,6 +137,18 @@ const Sensors = () => {
         {/* DEVICE BUTTONS */}
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Header title="SENSORES" subtitle="Altere a configuração dos seus sensores" />
+          <Box display="flex" alignItems="center" gap="10px">
+            <IconButton onClick={refreshDevices} sx={{
+              backgroundColor: colors.primary, // Ensure this resolves to a valid value
+              color: "rgb(42, 180, 234)",
+              "&:hover": {
+                backgroundColor: colors.grey[900], // Ensure this resolves to a valid value
+              },
+              marginRight: "10px",
+            }}>
+              <RefreshIcon />
+            </IconButton>
+          </Box>
         </Box>
         <Box
           display="flex"
@@ -180,12 +196,11 @@ const Sensors = () => {
           <Box
             mt="5px"
             p="20px"
-            bgcolor={colors.grey[900]}
+            bgcolor={colors.grey[1000]}
             borderRadius="8px"
             width="290px"
-            boxShadow={3} // Adds subtle shadow for better visibility
-            position="relative" // Make the container relative for absolute positioning
-
+            boxShadow={3}
+            position="relative"
           >
             <Box display="flex" justifyContent="space-between" alignItems="center" mb="10px">
               <Typography variant="h5" color="textPrimary" gutterBottom>
@@ -231,9 +246,23 @@ const Sensors = () => {
                 color="primary"
                 sx={{
                   mb: "10px", // Margin below the field
+
                   "& .MuiOutlinedInput-root": {
-                    height: "36px", // Set fixed height
-                    fontSize: "0.9rem", // Adjust font size if needed
+                    height: "40px",
+                    "& .MuiInputBase-input": {
+                      padding: "12px 14px", // Vertical centering
+                      fontSize: "1rem",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                    },
+                  },
+                  "& .MuiInputLabel-root": {
+                    fontSize: "1rem",
+                    top: "-6px",
+                    "&.Mui-focused": {
+                      color: "rgb(30,182,250)", // Light blue label color on focus
+                    },
                   },
                 }}
               />
@@ -246,9 +275,23 @@ const Sensors = () => {
                 color="primary"
                 sx={{
                   mb: "10px", // Margin below the field
+
                   "& .MuiOutlinedInput-root": {
-                    height: "36px", // Set fixed height
-                    fontSize: "0.9rem", // Adjust font size if needed
+                    height: "40px",
+                    "& .MuiInputBase-input": {
+                      padding: "12px 14px", // Vertical centering
+                      fontSize: "1rem",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                    },
+                  },
+                  "& .MuiInputLabel-root": {
+                    fontSize: "1rem",
+                    top: "-6px",
+                    "&.Mui-focused": {
+                      color: "rgb(30,182,250)", // Light blue label color on focus
+                    },
                   },
                 }}
               />
@@ -261,9 +304,23 @@ const Sensors = () => {
                 color="primary"
                 sx={{
                   mb: "10px", // Margin below the field
+
                   "& .MuiOutlinedInput-root": {
-                    height: "36px", // Set fixed height
-                    fontSize: "0.9rem", // Adjust font size if needed
+                    height: "40px",
+                    "& .MuiInputBase-input": {
+                      padding: "12px 14px", // Vertical centering
+                      fontSize: "1rem",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                    },
+                  },
+                  "& .MuiInputLabel-root": {
+                    fontSize: "1rem",
+                    top: "-6px",
+                    "&.Mui-focused": {
+                      color: "rgb(30,182,250)", // Light blue label color on focus
+                    },
                   },
                 }}
               />
@@ -276,9 +333,23 @@ const Sensors = () => {
                 color="primary"
                 sx={{
                   mb: "10px", // Margin below the field
+
                   "& .MuiOutlinedInput-root": {
-                    height: "36px", // Set fixed height
-                    fontSize: "0.9rem", // Adjust font size if needed
+                    height: "40px",
+                    "& .MuiInputBase-input": {
+                      padding: "12px 14px", // Vertical centering
+                      fontSize: "1rem",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgb(30,182,250)", // Light blue outline on focus
+                    },
+                  },
+                  "& .MuiInputLabel-root": {
+                    fontSize: "1rem",
+                    top: "-6px",
+                    "&.Mui-focused": {
+                      color: "rgb(30,182,250)", // Light blue label color on focus
+                    },
                   },
                 }}
               />

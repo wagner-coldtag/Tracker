@@ -23,9 +23,9 @@ const Chart = ({ data }) => {
 
   // Convert data to the format required by Recharts
   const transformedData = data[0]?.data.map((tempPoint, index) => {
-    const time = new Date(tempPoint.x * 1000).toISOString(); // Convert to ISO string
-    const temperatura = typeof tempPoint.y === "number" ? tempPoint.y.toFixed(1) : 0; // Ensure y is a number
-    const N = data[1]?.data[index]?.y.toFixed(1) || 0; // Get corresponding N value
+    const time = tempPoint.x * 1000; // Keep `time` as a numeric timestamp in milliseconds
+    const temperatura = typeof tempPoint.y === "number" ? tempPoint.y.toFixed(1) : 0;
+    const N = data[1]?.data[index]?.y.toFixed(1) || 0;
     return { time, temperatura, N };
   }) || [];
 
@@ -48,7 +48,9 @@ const Chart = ({ data }) => {
         <CartesianGrid strokeDasharray="3 3" stroke={colors.grey[600]} />
         <XAxis
           dataKey="time"
-          tickFormatter={(value) => new Date(value).toLocaleString()}
+          type="number" // Use numeric values for the x-axis
+          domain={["dataMin", "dataMax"]} // Optional: automatically adjust to the data range
+          tickFormatter={(value) => new Date(value).toLocaleString()} // Format for readable labels
           stroke={colors.grey[100]}
           tick={{ fill: colors.grey[100] }}
           axisLine={{ stroke: colors.grey[600] }}
