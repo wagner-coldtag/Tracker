@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, useTheme, IconButton, CircularProgress } from "@mui/material";
+import { Box, Button, useTheme, IconButton, CircularProgress, FormControl, MenuItem, Select, useMediaQuery } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import StatBox from "../../components/StatBox";
@@ -27,12 +27,24 @@ const RSSI = () => {
   const [data, setData] = useState([]);
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(true);
+  const isWideScreen = useMediaQuery((theme) => theme.breakpoints.up("md")); // 'md' corresponds to medium screens (960px and up)
+
   const [startDate, setStartDate] = useState(() => {
     const currentDate = new Date();
-    currentDate.setMonth(currentDate.getMonth() - 1);  // Subtract one month
+    currentDate.setDate(currentDate.getDate() - 2);  // Subtract 2 days
     return currentDate;
-  });  const [endDate, setEndDate] = useState(new Date());
+  });
+  const [endDate, setEndDate] = useState(new Date());
+  const [selectedMetric, setSelectedMetric] = useState("RSSI");
+  const getUnitForMetric = (metric) => {
+    const metricUnits = {
+      RSSI: "dBm",
+      voltage: "V",
+      count: "",
+    };
+    return metricUnits[metric] || ""; // Default to empty string if the metric is not found
+  };
 
   const downloadExcel = () => {
     if (data.length === 0) return;
@@ -79,36 +91,35 @@ const RSSI = () => {
       setLoading(true); // Start loading
 
       try {
-        const response = await fetch(`https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice}`);
+        const startTimestamp = Math.floor(startDate.getTime() / 1000);
+        const endTimestamp = Math.floor(endDate.getTime() / 1000);
+        const response = await fetch(
+          `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice}&start_date=${startTimestamp}&end_date=${endTimestamp}`
+        );
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const jsonData = await response.json();
+        console.log(jsonData);
         const sortedData = jsonData.sort((a, b) => a.timestamp - b.timestamp);
 
-        // Format data with date filtering
-        const formatData = (deviceData) => {
+        const formatData = (deviceData, selectedMetric) => {
           return [
             {
-              id: "RSSI",
+              id: {selectedMetric},
               color: "hsl(45, 70%, 50%)",
               data: deviceData
                 .filter(item => item.timestamp && !isNaN(item.timestamp))
-                .filter(item => {
-                  // Filter by start and end date
-                  const itemDate = new Date(item.timestamp * 1000);
-                  return itemDate >= startDate && itemDate <= endDate;
-                })
                 .map(item => ({
                   x: item.timestamp,
-                  y: item.RSSI,
+                  y: item[selectedMetric],
                   formattedX: formatTimestamp(item.timestamp),
                 }))
             }
           ];
         };
 
-        setData(formatData(sortedData.filter(item => item.device_id === selectedDevice)));
+        setData(formatData(sortedData, selectedMetric));
       } catch (error) {
         console.error("Error fetching Packages data:", error);
       } finally {
@@ -117,48 +128,62 @@ const RSSI = () => {
       }
     };
 
-    fetchPackageData(); // Call to fetch RSSI data
-    const intervalId = setInterval(fetchPackageData, 60000); // Fetch data every 60 seconds
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [selectedDevice, startDate, endDate]);
+    fetchPackageData();
+    const intervalId = setInterval(fetchPackageData, 60000);
+    return () => clearInterval(intervalId);
+  }, [selectedDevice, startDate, endDate, selectedMetric]);
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleString();
   };
 
-  const lastRSSI = data.length > 0 && data[0]?.data.length > 0
-    ? data[0].data[data[0].data.length - 1]?.y?.toFixed(1)
-    : 0;
-  const transformedData = data[0]?.data.map((tempPoint) => {
-    const time = tempPoint.x * 1000; // Keep `time` as a numeric timestamp in milliseconds
-    const RSSI = typeof tempPoint.y === "number" ? tempPoint.y : 0;
-    return { time, RSSI };
-  }) || [];
+  const transformedData =
+    data[0]?.data.map((tempPoint) => {
+      const time = tempPoint.x * 1000; // Keep time as a numeric timestamp in milliseconds
+      const value = typeof tempPoint.y === "number" ? tempPoint.y : 0;
+      return { time, value };
+    }) || [];
 
-
+  const lastValue = transformedData.length > 0 ? transformedData[transformedData.length-1]?.value?.toFixed(0) : "N/A";
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box m="20px">
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Header title="ANÁLISE DE RSSI" subtitle="Panorama geral do RSSI (Received Signal Strength Indication)" />
+          <Header title="SENSORES" subtitle="Panorama geral dos Sensores" />
         </Box>
+        <Box
+          display="flex"
+          flexWrap="wrap" // Allows items to wrap to the next line
+          alignItems="center"
+          gap="10px" // Adds spacing between items
+          mb="20px"
+        >
+          <FormControl style={{ minWidth: "150px" }}>
+            <Select
+              value={selectedMetric}
+              onChange={(e) => setSelectedMetric(e.target.value)}
+            >
+              <MenuItem value="RSSI">RSSI</MenuItem>
+              <MenuItem value="voltage">Tensão</MenuItem>
+              <MenuItem value="count">Pacotes</MenuItem>
+            </Select>
+          </FormControl>
 
-        <Box display="flex" justifyContent="space-between" alignItems="center">
           <DateTimePicker
             label="Início"
             value={startDate}
             onChange={(newValue) => setStartDate(newValue)}
-            renderInput={(params) => <Box component="span" sx={{ ml: 2 }}>{params.input}</Box>}
           />
+
           <DateTimePicker
             label="Fim"
             value={endDate}
             onChange={(newValue) => setEndDate(newValue)}
-            renderInput={(params) => <Box component="span" sx={{ ml: 2 }}>{params.input}</Box>}
           />
         </Box>
+
 
         <Box
           display="flex"
@@ -209,20 +234,28 @@ const RSSI = () => {
               <CircularProgress color="inherit" />
             </Box>
           ) : (
-            <><Box
-              gridColumn="span 3"
-              backgroundColor={colors.primary[400]}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <StatBox
-                title={lastRSSI !== null ? `${lastRSSI} dBm` : "No Data"}
-                subtitle="Último valor"
-                progress={lastRSSI !== null ? (lastRSSI / 10).toFixed(2) : 0}
-                increase={lastRSSI > 10 ? "Normal" : "Baixo"}
-                icon={<SignalWifi4BarIcon sx={{ fontSize: "26px" }} />} />
-            </Box><Box
+            <>{isWideScreen && (
+              <Box
+                gridColumn="span 3"
+                backgroundColor={colors.primary[400]}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <StatBox
+                  title={
+                    lastValue !== null
+                      ? `${lastValue} ${getUnitForMetric(selectedMetric)}`
+                      : "No Data"
+                  }
+                  subtitle="Valor atual"
+                  progress={lastValue !== null ? (lastValue / 10).toFixed(2) : 0}
+                  icon={<SignalWifi4BarIcon sx={{ fontSize: "26px" }} />}
+                />
+              </Box>
+            )}
+
+            <Box
               gridColumn="span 9"
               backgroundColor={colors.primary[400]}
               p="20px"
@@ -253,10 +286,18 @@ const RSSI = () => {
                     />
                     <YAxis
                       yAxisId="left"
-                      label={{ value: "RSSI (dBm)", angle: -90, fill: colors.grey[100], dx: -40 }}
+                      label={{
+                        value: selectedMetric === "RSSI" ? "RSSI (dBm)" :
+                          selectedMetric === "voltage" ? "Tensão (V)" :
+                            selectedMetric === "count" ? "Pacotes" : "",
+                        angle: -90,
+                        fill: colors.grey[100],
+                        dx: -40,
+                      }}
                       stroke={colors.grey[100]}
                       tick={{ fill: colors.grey[100] }}
-                      axisLine={{ stroke: colors.grey[600] }} />
+                      axisLine={{ stroke: colors.grey[600] }}
+                    />
                     <Tooltip
                       contentStyle={{ backgroundColor: colors.primary[500], color: colors.grey[300] }}
                       labelStyle={{ color: "white" }}
@@ -273,7 +314,7 @@ const RSSI = () => {
                     <Line
                       yAxisId="left"
                       type="monotone"
-                      dataKey="RSSI"
+                      dataKey="value"
                       stroke={colors.greenAccent[500]}
                       strokeWidth={2}
                       dot={false} />

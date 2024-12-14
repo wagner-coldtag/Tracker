@@ -5,12 +5,10 @@ import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
-import SignalWifi4BarIcon from "@mui/icons-material/SignalWifi4Bar";
 import Logo from "./Logo.png";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
-import FlashOnIcon from "@mui/icons-material/FlashOn";
 import SensorsIcon from "@mui/icons-material/Sensors";
+import BluetoothIcon from "@mui/icons-material/Bluetooth";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -132,23 +130,9 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
             <Item
-              title="Pacotes"
-              to="/package"
-              icon={<Inventory2Icon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Tensão"
-              to="/voltage"
-              icon={<FlashOnIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="RSSI"
+              title="Conectividade"
               to="/RSSI"
-              icon={<SignalWifi4BarIcon />}
+              icon={<BluetoothIcon />}
               selected={selected}
               setSelected={setSelected}
             />

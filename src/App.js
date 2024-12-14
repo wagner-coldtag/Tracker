@@ -8,10 +8,8 @@ import Sensors from "./scenes/sensors";
 import Line from "./scenes/line";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
-import Voltage from "./scenes/dashboard/Voltage";
 import RSSI from "./scenes/dashboard/RSSI";
 import Auth from "./scenes/auth/Auth";
-import Package from "./scenes/dashboard/Packages";
 import { UserState } from "./context/UserProvider";
 import ChangePassword from "./scenes/auth/ChangePassword";
 
@@ -35,11 +33,9 @@ function App () {
                 <Route path="/Tracker" element={<Dashboard />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/line" element={<Line />} />
-                <Route path="/voltage" element={<Voltage />} />
                 <Route path="/sensor" element={<Sensors />} />
 
                 <Route path="/rssi" element={<RSSI />} />
-                <Route path="/package" element={<Package />} />
                 <Route path="/change-password" element={<ChangePassword />} />  {/* Add this route */}
 
               </Routes>

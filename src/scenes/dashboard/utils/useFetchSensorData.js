@@ -39,9 +39,7 @@ const useFetchSensorData = () => {
   const fetchSensorData = async () => {
     try {
       const company = user.Company;
-      console.log(user);
       const response = await axios.get(`https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${company}`);
-      console.log(response);
       const jsonData = response?.data || [];
       setTypes([...new Set(jsonData.map(item => item.type))]);
 
@@ -115,6 +113,8 @@ const useFetchSensorData = () => {
 
         const jsonData = await response.json();
         const sortedData = jsonData.sort((a, b) => a.timestamp - b.timestamp);
+        console.log(sortedData);
+
 
         // Format data
         const formatData = (deviceData) => {

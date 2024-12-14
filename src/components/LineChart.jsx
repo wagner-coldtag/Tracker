@@ -28,6 +28,7 @@ const Chart = ({ data }) => {
     const N = data[1]?.data[index]?.y.toFixed(1) || 0;
     return { time, temperatura, N };
   }) || [];
+  console.log(transformedData);
 
   // Calculate min and max for N axis
   const nValues = transformedData.map(d => d.N);
@@ -59,11 +60,11 @@ const Chart = ({ data }) => {
         {/* Primary Y-Axis for Temperature */}
         <YAxis
           yAxisId="left"
-          label={{ value: "Temperatura (°C)", angle: -90, fill: colors.grey[100], dx: -10 }} // Added dx for spacing
+          label={{ value: "Temperatura (°C)", angle: -90, fill: colors.grey[100], dx: -10 }}
           stroke={colors.grey[100]}
           tick={{ fill: colors.grey[100] }}
           axisLine={{ stroke: colors.grey[600] }}
-          domain={[TMin, TMax]} // Set domain dynamically
+          domain={[TMin, TMax]}
 
         />
 
