@@ -15,7 +15,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import DateRangePicker from "./utils/DataRangePicker";
 import useFetchSensorData from "./utils/useFetchSensorData";
-import dashboardStyles from "./styles"; // Import the styles
+import dashboardStyles from "./styles";
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -44,7 +44,6 @@ const Dashboard = () => {
   const highTemperatureMeasurements = data.length > 0
     ? data[0].data.filter(item => item.y > 10).length
     : 0;
-
 
   let timePassed = "No Data";
 

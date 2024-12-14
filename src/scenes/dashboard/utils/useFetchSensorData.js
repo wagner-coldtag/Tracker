@@ -15,7 +15,7 @@ const useFetchSensorData = () => {
 
   const [startDate, setStartDate] = useState(() => {
     const currentDate = new Date();
-    currentDate.setMonth(currentDate.getMonth() - 1);  // Subtract one month
+    currentDate.setDate(currentDate.getDate() - 2);  // Subtract 2 days
     return currentDate;
   });
   const [endDate, setEndDate] = useState(new Date());
@@ -38,10 +38,11 @@ const useFetchSensorData = () => {
 
   const fetchSensorData = async () => {
     try {
-      const company = user.Company;  // Get the user's company
+      const company = user.Company;
+      console.log(user);
       const response = await axios.get(`https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${company}`);
-      const jsonData = response?.data || [];
       console.log(response);
+      const jsonData = response?.data || [];
       setTypes([...new Set(jsonData.map(item => item.type))]);
 
       const fetchedDevices = jsonData.map((item) => item);
@@ -81,16 +82,16 @@ const useFetchSensorData = () => {
   const formatTimestamp = (timestamp) => {
     if (!timestamp || isNaN(timestamp)) {
       console.error("Invalid timestamp:", timestamp);
-      return "Invalid Date"; // Handle invalid timestamp
+      return "Invalid Date";
     }
 
-    const date = new Date(timestamp * 1000); // Assuming timestamp is in seconds
+    const date = new Date(timestamp * 1000);
 
     if (isNaN(date.getTime())) {
       console.error("Date creation failed for timestamp:", timestamp);
       return "Invalid Date";
     }
-    return date.toLocaleString(); // For display purposes
+    return date.toLocaleString();
   };
 
   useEffect(() => {
@@ -99,61 +100,53 @@ const useFetchSensorData = () => {
 
   useEffect(() => {
     const fetchPackageData = async () => {
-      if (!selectedDevice) return; // Don't fetch if no device is selected
+      if (!selectedDevice) return;
 
       try {
         setIsLoading(true);
-        console.log(isLoading);
 
+        const startTimestamp = Math.floor(startDate.getTime() / 1000);
+        const endTimestamp = Math.floor(endDate.getTime() / 1000);
 
-        const response = await fetch(`https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice.device_id}`);
+        const response = await fetch(
+          `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice.device_id}&start_date=${startTimestamp}&end_date=${endTimestamp}`
+        );
         if (!response.ok) throw new Error("Network response was not ok");
 
         const jsonData = await response.json();
         const sortedData = jsonData.sort((a, b) => a.timestamp - b.timestamp);
 
-        // Format data with date filtering
+        // Format data
         const formatData = (deviceData) => {
           return [
             {
               id: "temperature",
               color: "hsl(214, 70%, 50%)",
-              data: deviceData
-                .filter(item => item.timestamp && !isNaN(item.timestamp))
-                .filter(item => {
-                  // Filter by start and end date
-                  const itemDate = new Date(item.timestamp * 1000);
-                  return itemDate >= startDate && itemDate <= endDate;
-                })
-                .map(item => {
-                  return {
-                    x: item.timestamp, // Keep the raw timestamp
-                    y: item.temperature,
-                    voltage: item.voltage,
-                    rssi: item.RSSI,
-                    packages: item.count,
-                    formattedX: formatTimestamp(item.timestamp), // Store formatted timestamp for display
-                  };
-                })
+              data: deviceData.map(item => ({
+                x: item.timestamp,
+                y: item.temperature,
+                voltage: item.voltage,
+                rssi: item.RSSI,
+                packages: item.count,
+                formattedX: formatTimestamp(item.timestamp),
+              }))
             },
             {
               id: "N",
               color: "hsl(153, 70%, 50%)",
-              data: deviceData
-                .filter(item => item.timestamp && !isNaN(item.timestamp))
-                .map(item => ({
-                  x: item.timestamp, // Keep the raw timestamp
-                  y: item.N,
-                  formattedX: formatTimestamp(item.timestamp), // Store formatted timestamp for display
-                }))
+              data: deviceData.map(item => ({
+                x: item.timestamp,
+                y: item.N,
+                formattedX: formatTimestamp(item.timestamp),
+              }))
             }
           ];
         };
-        setData(formatData(sortedData.filter(item => item.device_id === selectedDevice?.device_id)));
-        setIsLoading(false);
-
+        setData(formatData(sortedData));
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -182,7 +175,8 @@ const useFetchSensorData = () => {
     if (data.length === 0) return;
 
     const worksheetData = data[0].data.map((item, index) => ({
-      Timestamp: formatTimestamp(item.x),
+      Timestamp: formatTimestamp(item.x), // Formatted timestamp
+      Raw_Timestamp: item.x || "No Data", // Numeric raw timestamp
       Temperature: item.y,
       N: data[1]?.data[index]?.y || "No Data",
       Voltage: item.voltage || "No Data",
