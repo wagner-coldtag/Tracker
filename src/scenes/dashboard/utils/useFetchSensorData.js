@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx"; // Import xlsx
 
@@ -11,7 +11,7 @@ const useFetchSensorData = () => {
 
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [ types, setTypes ] = useState([]);
-  const [selectedType, setSelectedType] = useState(null);
+  const [selectedType, setSelectedType] = useState(types[0] ? types[0] : null);
 
   const [startDate, setStartDate] = useState(() => {
     const currentDate = new Date();
@@ -42,6 +42,7 @@ const useFetchSensorData = () => {
       const response = await axios.get(`https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${company}`);
       const jsonData = response?.data || [];
       setTypes([...new Set(jsonData.map(item => item.type))]);
+
 
       const fetchedDevices = jsonData.map((item) => item);
       setDevices(fetchedDevices);
@@ -91,10 +92,29 @@ const useFetchSensorData = () => {
     }
     return date.toLocaleString();
   };
+  const isInitialized = useRef(false); // Ref to track initialization
+
 
   useEffect(() => {
-    fetchSensorData();
-  }, []);
+    const fetchSensorDataAndSetType = async () => {
+      const sensorData = await fetchSensorData();
+
+      if (!isInitialized.current) {
+        // Initialize the selected type only once
+        if (sensorData.length > 0) {
+          const defaultType = sensorData[0].type || null;
+          setSelectedType(defaultType);
+          setFilteredSensors(sensorData.filter((device) => device.type === defaultType));
+        } else {
+          setSelectedType(null);
+          setFilteredSensors([]);
+        }
+        isInitialized.current = true;
+      }
+    };
+
+    fetchSensorDataAndSetType();
+  }, [devices]);
 
   useEffect(() => {
     const fetchPackageData = async () => {
@@ -107,13 +127,12 @@ const useFetchSensorData = () => {
         const endTimestamp = Math.floor(endDate.getTime() / 1000);
 
         const response = await fetch(
-          `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice.device_id}&start_date=${startTimestamp}&end_date=${endTimestamp}`
+          `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice}&start_date=${startTimestamp}&end_date=${endTimestamp}`
         );
         if (!response.ok) throw new Error("Network response was not ok");
 
         const jsonData = await response.json();
         const sortedData = jsonData.sort((a, b) => a.timestamp - b.timestamp);
-        console.log(sortedData);
 
 
         // Format data
