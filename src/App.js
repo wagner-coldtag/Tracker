@@ -9,6 +9,8 @@ import Line from "./scenes/line";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
 import RSSI from "./scenes/dashboard/RSSI";
+import SensorDetailsPage from "./scenes/dashboard/SensorDetailsPage"; // Import the new sensor details page
+
 import Auth from "./scenes/auth/Auth";
 import { UserState } from "./context/UserProvider";
 import ChangePassword from "./scenes/auth/ChangePassword";
@@ -30,6 +32,7 @@ function App () {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/auth" element={<Dashboard />} />
+                <Route path="/sensor/:sensorId" element={<SensorDetailsPage />} />  {/* New route for sensor details */}
                 <Route path="/Tracker" element={<Dashboard />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/line" element={<Line />} />

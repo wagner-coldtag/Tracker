@@ -45,12 +45,12 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
         action={
           sensor.notifications && sensor.notifications.length > 0 ? (
             <IconButton>
-              <Notifications sx={{ color: "#ff7043" }} />
+              <Notifications sx={{ color: "#ff7043", }} />
               <Box
                 sx={{
                   position: "absolute",
-                  top: -5,
-                  right: -5,
+                  top: +1,
+                  right: +2,
                   backgroundColor: "#ff7043",
                   borderRadius: "50%",
                   width: 18,
@@ -59,7 +59,8 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
                   alignItems: "center",
                   justifyContent: "center",
                   color: "white",
-                  fontSize: 12,
+                  fontSize: 11,
+                  border: `1px solid ${colors.primary[400]}`
                 }}
               >
                 {sensor.notifications.length}
@@ -84,31 +85,7 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
           </Typography>
         </Box>
       </CardContent>
-      <Box sx={{ position: "absolute", top: 10, right: 10 }}>
-        {sensor.notifications && sensor.notifications.length > 0 && (
-          <IconButton>
-            <Notifications sx={{ color: "#ff7043" }} />
-            <Box
-              sx={{
-                position: "absolute",
-                top: -5,
-                right: -5,
-                backgroundColor: "#ff7043",
-                borderRadius: "50%",
-                width: 18,
-                height: 18,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontSize: 12,
-              }}
-            >
-              {sensor.notifications.length}
-            </Box>
-          </IconButton>
-        )}
-      </Box>
+
       <Box
         sx={{
           display: "flex",

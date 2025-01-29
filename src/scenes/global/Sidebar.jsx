@@ -7,7 +7,6 @@ import { tokens } from "../../theme";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import Logo from "./Logo.png";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
-import SensorsIcon from "@mui/icons-material/Sensors";
 import BluetoothIcon from "@mui/icons-material/Bluetooth";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
@@ -115,13 +114,7 @@ const Sidebar = () => {
           )}
 
           <Box paddingLeft={isCollapsed ? undefined : "10%"}>
-            <Typography
-              variant="h7"
-              color={colors.grey[300]}
-              sx={{ m: "15px 0 5px 20px" }}
-            >
-              Charts
-            </Typography>
+
             <Item
               title="Temperatura"
               to="/"
@@ -136,21 +129,6 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-            <Typography
-              variant="h6"
-              color={colors.grey[300]}
-              sx={{ m: "15px 0 5px 20px" }}
-            >
-              Sensores
-            </Typography>
-            <Item
-              title="Sensores"
-              to="/sensor"
-              icon={<SensorsIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            {/* Other items can go here */}
           </Box>
         </Menu>
       </ProSidebar>
