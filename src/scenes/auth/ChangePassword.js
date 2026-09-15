@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import axios from "axios";
 import { Box, Button, TextField, Snackbar, Alert } from "@mui/material";
+import axios from "axios";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function ChangePassword () {
+function ChangePassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNotification, setShowNotification] = useState(false);
   const [notification, setNotification] = useState({ text: "", severity: "error" });
   const navigate = useNavigate();
 
-  const handleChangePassword = async (event) => {
+  const handleChangePassword = async(event) => {
     event.preventDefault();
 
     if (newPassword !== confirmPassword) {
@@ -32,7 +32,7 @@ function ChangePassword () {
       if (response.status === 200) {
         setNotification({ text: "Password updated successfully!", severity: "success" });
         setShowNotification(true);
-        navigate("/");  // Redirect to homepage after successful password change
+        navigate("/"); // Redirect to homepage after successful password change
       }
     } catch (error) {
       setNotification({ text: error.response?.data?.message || "Error changing password", severity: "error" });

@@ -23,7 +23,6 @@ export const checkPassword = (email, password) => API.post("/", {
 });
 
 export const passwordChange = (email, password) => {
-  console.log(email, password); // This will log the email and password to the console
 
   // Now perform the API post request
   return API.post("/", {

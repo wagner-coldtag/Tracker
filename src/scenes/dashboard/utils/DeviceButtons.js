@@ -1,5 +1,5 @@
-import React from "react";
 import { Button, Box } from "@mui/material";
+import React from "react";
 
 const DeviceButtons = ({ devices, selectedDevice, setSelectedDevice, colors }) => (
   <Box display="flex" flexWrap="wrap" gap="10px">

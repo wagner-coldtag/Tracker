@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import * as XLSX from "xlsx"; // Import xlsx
+import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 
 const useFetchSensorData = () => {
   const user = JSON.parse(localStorage.getItem("profile"));
@@ -10,21 +10,24 @@ const useFetchSensorData = () => {
   const [filteredSensors, setFilteredSensors] = useState([]);
 
   const [selectedDevice, setSelectedDevice] = useState(null);
-  const [ types, setTypes ] = useState([]);
+  const [types, setTypes] = useState([]);
   const [selectedType, setSelectedType] = useState(types[0] ? types[0] : null);
 
   const [startDate, setStartDate] = useState(() => {
     const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 2);  // Subtract 2 days
+    currentDate.setDate(currentDate.getDate() - 1);
     return currentDate;
   });
   const [endDate, setEndDate] = useState(new Date());
 
+  const isInitialized = useRef(false);
+
+  // company único e consistente, usado em todas as chamadas
+  const company = user?.company;
+
   const fetchDevices = async () => {
     try {
-      const company = user.company;
       const url = `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/devices?company=${encodeURIComponent(company)}`;
-
       const response = await fetch(url);
       if (!response.ok) throw new Error("Network response was not ok");
 
@@ -38,16 +41,22 @@ const useFetchSensorData = () => {
 
   const fetchSensorData = async () => {
     try {
-      const company = user.Company;
-      const response = await axios.get(`https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${company}`);
+      const response = await axios.get(
+        `https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${encodeURIComponent(company)}`
+      );
       const jsonData = response?.data || [];
-      setTypes([...new Set(jsonData.map(item => item.type))]);
 
+      const hasNoType = jsonData.some((item) => !item.type);
+      const uniqueTypes = [...new Set(jsonData.map((item) => item.type).filter(Boolean))];
 
-      const fetchedDevices = jsonData.map((item) => item);
-      setDevices(fetchedDevices);
+      if (hasNoType) {
+        uniqueTypes.push("Sem Local");
+      }
 
-      return fetchedDevices;
+      setTypes(uniqueTypes);
+      setDevices(jsonData);
+
+      return jsonData;
     } catch (error) {
       console.error("Error fetching sensor data:", error);
       return [];
@@ -60,22 +69,27 @@ const useFetchSensorData = () => {
     const missingDevices = fetchedDevices.filter(
       (device) => !fetchedSensorData.some((sensor) => sensor.device_id === device)
     );
-    console.log(missingDevices);
 
-    missingDevices.forEach(async (device) => {
-      try {
-        await axios.post("https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors", {
-          device_id: device,
-          company: "Dumb_company",
-          type: "miscelaneous"
-        });
-        console.log(`Device ${device} created successfully`);
-        fetchSensorData();
+    // Promise.all em vez de forEach com async solto — evita corrida
+    // entre os posts e garante que dá pra saber quando terminou
+    await Promise.all(
+      missingDevices.map(async (device) => {
+        try {
+          await axios.post("https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors", {
+            device_id: device,
+            company: "Dumb_company",
+            type: "miscelaneous",
+          });
+        } catch (error) {
+          console.error(`Failed to create device ${device}:`, error);
+        }
+      })
+    );
 
-      } catch (error) {
-        console.error(`Failed to create device ${device}:`, error);
-      }
-    });
+    // só refaz o fetch UMA vez, depois de todos os posts terminarem
+    if (missingDevices.length > 0) {
+      await fetchSensorData();
+    }
   };
 
   const formatTimestamp = (timestamp) => {
@@ -92,15 +106,14 @@ const useFetchSensorData = () => {
     }
     return date.toLocaleString();
   };
-  const isInitialized = useRef(false); // Ref to track initialization
 
-
+  // Roda UMA ÚNICA VEZ na montagem — não depende mais de `devices`,
+  // então não entra em loop com o próprio setDevices() de dentro dele
   useEffect(() => {
     const fetchSensorDataAndSetType = async () => {
       const sensorData = await fetchSensorData();
 
       if (!isInitialized.current) {
-        // Initialize the selected type only once
         if (sensorData.length > 0) {
           const defaultType = sensorData[0].type || null;
           setSelectedType(defaultType);
@@ -114,7 +127,7 @@ const useFetchSensorData = () => {
     };
 
     fetchSensorDataAndSetType();
-  }, [devices]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchPackageData = async () => {
@@ -127,38 +140,36 @@ const useFetchSensorData = () => {
         const endTimestamp = Math.floor(endDate.getTime() / 1000);
 
         const response = await fetch(
-          `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=CompanyA&device_id=${selectedDevice}&start_date=${startTimestamp}&end_date=${endTimestamp}`
+          `https://08mwl5gxyj.execute-api.sa-east-1.amazonaws.com/device-data?company=${encodeURIComponent(company)}&device_id=${selectedDevice}&start_date=${startTimestamp}&end_date=${endTimestamp}`
         );
         if (!response.ok) throw new Error("Network response was not ok");
 
         const jsonData = await response.json();
         const sortedData = jsonData.sort((a, b) => a.timestamp - b.timestamp);
 
-
-        // Format data
         const formatData = (deviceData) => {
           return [
             {
               id: "temperature",
               color: "hsl(214, 70%, 50%)",
-              data: deviceData.map(item => ({
+              data: deviceData.map((item) => ({
                 x: item.timestamp,
                 y: item.temperature,
                 voltage: item.voltage,
                 rssi: item.RSSI,
                 packages: item.count,
                 formattedX: formatTimestamp(item.timestamp),
-              }))
+              })),
             },
             {
               id: "N",
               color: "hsl(153, 70%, 50%)",
-              data: deviceData.map(item => ({
+              data: deviceData.map((item) => ({
                 x: item.timestamp,
                 y: item.N,
                 formattedX: formatTimestamp(item.timestamp),
-              }))
-            }
+              })),
+            },
           ];
         };
         setData(formatData(sortedData));
@@ -170,7 +181,7 @@ const useFetchSensorData = () => {
     };
 
     fetchPackageData();
-    const intervalId = setInterval(fetchPackageData, 600000); // Fetch data every 10 minutes
+    const intervalId = setInterval(fetchPackageData, 600000);
     return () => clearInterval(intervalId);
   }, [selectedDevice, startDate, endDate]);
 
@@ -180,7 +191,7 @@ const useFetchSensorData = () => {
     const worksheetData = data[0].data.map((item, index) => ({
       Timestamp: formatTimestamp(item.x),
       Temperature: item.y,
-      N: data[1]?.data[index]?.y || "No Data" // Add N data if available, else 'No Data'
+      N: data[1]?.data[index]?.y || "No Data",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -194,8 +205,8 @@ const useFetchSensorData = () => {
     if (data.length === 0) return;
 
     const worksheetData = data[0].data.map((item, index) => ({
-      Timestamp: formatTimestamp(item.x), // Formatted timestamp
-      Raw_Timestamp: item.x || "No Data", // Numeric raw timestamp
+      Timestamp: formatTimestamp(item.x),
+      Raw_Timestamp: item.x || "No Data",
       Temperature: item.y,
       N: data[1]?.data[index]?.y || "No Data",
       Voltage: item.voltage || "No Data",
@@ -210,8 +221,28 @@ const useFetchSensorData = () => {
     XLSX.writeFile(workbook, "sensor_report.xlsx");
   };
 
-
-  return { isLoading, types, setTypes, filteredSensors, setFilteredSensors, selectedType, setSelectedType, data, downloadAll, downloadExcel, setData, devices, selectedDevice, setSelectedDevice, startDate, formatTimestamp, setStartDate, endDate, setEndDate, refreshDevices };
+  return {
+    isLoading,
+    types,
+    setTypes,
+    filteredSensors,
+    setFilteredSensors,
+    selectedType,
+    setSelectedType,
+    data,
+    downloadAll,
+    downloadExcel,
+    setData,
+    devices,
+    selectedDevice,
+    setSelectedDevice,
+    startDate,
+    formatTimestamp,
+    setStartDate,
+    endDate,
+    setEndDate,
+    refreshDevices,
+  };
 };
 
 export default useFetchSensorData;

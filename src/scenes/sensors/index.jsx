@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
+import DeleteIcon from "@mui/icons-material/Delete"; // Icon for exclusion
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SaveIcon from "@mui/icons-material/Save"; // Import the Save icon
 import { Box, Button, Typography, IconButton, useTheme, TextField, Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle, } from "@mui/material";
-import { tokens } from "../../theme";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import Header from "../../components/Header";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers";
-import DeleteIcon from "@mui/icons-material/Delete"; // Icon for exclusion
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import axios from "axios";
-import SaveIcon from "@mui/icons-material/Save"; // Import the Save icon
+import React, { useState, useEffect } from "react";
+import Header from "../../components/Header";
+import { tokens } from "../../theme";
 import useFetchSensorData from "../dashboard/utils/useFetchSensorData";
 
 const Sensors = () => {
@@ -19,13 +19,13 @@ const Sensors = () => {
   const { refreshDevices } = useFetchSensorData();
 
   const [sensorType, setSensorType] = useState("");
-  const [pH, setPH] = useState("");  // State for pH
-  const [aw, setAw] = useState("");  // State for aw
+  const [pH, setPH] = useState(""); // State for pH
+  const [aw, setAw] = useState(""); // State for aw
   const [openModal, setOpenModal] = useState(false); // State for modal
-  const [productType, setProductType] = useState("");  // State for productType
+  const [productType, setProductType] = useState(""); // State for productType
   const user = JSON.parse(localStorage.getItem("profile"));
 
-  const handleDelete = async () => {
+  const handleDelete = async() => {
     if (!selectedDevice) return;
 
     try {
@@ -43,7 +43,6 @@ const Sensors = () => {
 
       setDevices(devices.filter((device) => device.device_id !== selectedDevice?.device_id));
       setSelectedDevice(null); // Clear the selected device
-      console.log("Device deleted successfully");
       const responseSensors = await axios.delete("https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors", {
         headers: {
           "Content-Type": "application/json"
@@ -57,14 +56,12 @@ const Sensors = () => {
         throw new Error("Failed to delete sensor from Sensors database");
       }
 
-      console.log("Sensor deleted successfully from Sensors database");
-
     } catch (error) {
       console.error("Error deleting device:", error);
     }
   };
 
-  const handleSaveSensorType = async () => {
+  const handleSaveSensorType = async() => {
     if (!selectedDevice || !sensorType || !pH || !aw || !productType) return;
 
     try {
@@ -106,9 +103,9 @@ const Sensors = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
 
-  const fetchSensorData = async () => {
+  const fetchSensorData = async() => {
     try {
-      const company = user.Company;  // Get the user's company
+      const company = user.Company; // Get the user's company
       const response = await axios.get(`https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${company}`);
       const jsonData = response?.data || [];
       setDevices(jsonData);
@@ -122,6 +119,7 @@ const Sensors = () => {
   useEffect(() => {
     fetchSensorData();
   }, []);
+  
   useEffect(() => {
     if (selectedDevice) {
       setSensorType(selectedDevice.type || "");
@@ -139,10 +137,10 @@ const Sensors = () => {
           <Header title="SENSORES" subtitle="Altere a configuração dos seus sensores" />
           <Box display="flex" alignItems="center" gap="10px">
             <IconButton onClick={refreshDevices} sx={{
-              backgroundColor: colors.primary, // Ensure this resolves to a valid value
+              backgroundColor: colors.primary,
               color: "rgb(42, 180, 234)",
               "&:hover": {
-                backgroundColor: colors.grey[900], // Ensure this resolves to a valid value
+                backgroundColor: colors.grey[900], 
               },
               marginRight: "10px",
             }}>

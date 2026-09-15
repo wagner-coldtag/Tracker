@@ -1,16 +1,10 @@
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { useTheme , Box, Typography } from "@mui/material";
 import React from "react";
-import { useTheme } from "@mui/material";
-import { tokens } from "../theme";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
+import { tokens } from "../theme";
 
 const Chart = ({ data, tempMin, tempMax }) => {
   const theme = useTheme();
@@ -37,7 +31,28 @@ const Chart = ({ data, tempMin, tempMax }) => {
   const tempMaxLine = tempMax ? transformedData.map((point) => ({ time: point.time, Máximo: tempMax })) : [];
 
   if (transformedData.length === 0) {
-    return <div>No valid data available for the chart.</div>; // Fallback if no valid data exists
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        height="200px"
+        border="1px dashed"
+        borderColor={colors.grey[600]}
+        borderRadius="10px"
+        bgcolor={colors.primary[400]}
+        mt={4} p={2}
+      >
+        <ErrorOutlineIcon sx={{ fontSize: 48, color: "rgb(255, 115, 115)", mb: 1 }} />
+        <Typography variant="h6" color={colors.grey[100]} align="center">
+          Este sensor não possui dados de temperatura no período informado.
+        </Typography>
+        <Typography variant="body2" color={colors.grey[300]} align="center" mt={1}>
+          Verifique se o dispositivo está conectado ou ativo.
+        </Typography>
+      </Box>
+    );
   }
 
   return (
@@ -68,7 +83,6 @@ const Chart = ({ data, tempMin, tempMax }) => {
           content={({ payload, label }) => {
             if (!payload || payload.length === 0) return null;
 
-            // Find the temperature data
             const temperatureData = payload.find(item => item.dataKey === "Temperatura");
 
             if (temperatureData) {

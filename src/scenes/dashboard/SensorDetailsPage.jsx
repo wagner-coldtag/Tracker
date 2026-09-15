@@ -1,87 +1,82 @@
-import { useEffect, useState } from "react";
-import { Box, IconButton, Typography, useTheme, useMediaQuery, Dialog, DialogContent, DialogTitle, TextField, Snackbar, SnackbarContent } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useNavigate, useParams } from "react-router-dom"; // for navigation and getting the sensor ID
-import Header from "../../components/Header";
-import SaveIcon from "@mui/icons-material/Save";
-import DeleteIcon from "@mui/icons-material/Delete";
-import DateRangePicker from "./utils/DataRangePicker";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import Notifications from "@mui/icons-material/Notifications";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { Box, IconButton, Typography, useTheme, useMediaQuery, Snackbar, SnackbarContent , CircularProgress } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom"; // for navigation and getting the sensor ID
+import SettingsModal from "./SettingsModal";
 import dashboardStyles from "./styles";
+import TableComponent from "./TableComponent";
+import DateRangePicker from "./utils/DataRangePicker";
+import Header from "../../components/Header";
 import { tokens } from "../../theme";
 import useFetchSensorData from "./utils/useFetchSensorData";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import SettingsIcon from "@mui/icons-material/Settings";
 import Chart from "../../components/LineChart";
-import axios from "axios";
 
 const SensorDetailsPage = () => {
+
   const navigate = useNavigate();
-  const { sensorId } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const [openAlert, setOpenAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-
+  const [sensorData, setSensorData] = useState(JSON.parse(localStorage.getItem("selectedDevice")));
+  const [openNotifications, setOpenNotifications] = useState(false);
+  const { sensorId } = useParams();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const styles = dashboardStyles(colors);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const [sensorData, setSensorData] = useState(JSON.parse(localStorage.getItem("selectedDevice")));
   const tempMin = sensorData.minTemp;
   const tempMax = sensorData.maxTemp;
 
-  const { downloadAll, startDate, setStartDate, endDate, setEndDate, formatTimestamp, downloadExcel, setSelectedDevice, data } = useFetchSensorData();
-  const handleOpenModal = () => setOpenModal(true);  // Open the modal
-  const handleCloseModal = () => setOpenModal(false);  // Close the modal
+  const { downloadAll, startDate, setStartDate, endDate, setEndDate, formatTimestamp, downloadExcel, setSelectedDevice, selectedDevice, data } = useFetchSensorData();
+  const handleOpenModal = () => setOpenModal(true);  
+  const handleCloseModal = () => setOpenModal(false);
 
-  const handleSaveSensorType = async () => {
+  const handleSaveSensorType = async() => {
     try {
-
-      const response = await fetch(
-        "https://afuud4nek9.execute-api.sa-east-1.amazonaws.com/dev/sensors",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            device_id: sensorData?.device_id,
-            type: sensorData?.type,
-            maxTemp: sensorData?.maxTemp,
-            minTemp: sensorData?.minTemp,
-            wrongsBeforeAlarm: sensorData?.wrongsBeforeAlarm,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        throw new Error(errorResponse.message || "Failed to save sensor details");
-      }
-
       const currentSensorData = JSON.parse(localStorage.getItem("selectedDevice"));
-
-      const updatedSensorData = {
-        ...currentSensorData,
-        type: sensorData.type,
-        maxTemp: Number(sensorData.maxTemp),
-        minTemp: Number(sensorData.minTemp),
-        wrongsBeforeAlarm: Number(sensorData.wrongsBeforeAlarm),
+  
+      const bodyToSend = {
+        device_id: currentSensorData.device_id,
       };
-
-      // Save updated sensor data to localStorage
-      localStorage.setItem("selectedDevice", JSON.stringify(updatedSensorData));
-
-      alert("Sensor updated successfully!");
-      setOpenModal(false);
+  
+      if (sensorData.type) bodyToSend.type = sensorData.type;
+      if (sensorData.maxTemp !== "") bodyToSend.maxTemp = Number(sensorData.maxTemp);
+      if (sensorData.minTemp !== "") bodyToSend.minTemp = Number(sensorData.minTemp);
+      if (sensorData.wrongsBeforeAlarm !== "") bodyToSend.wrongsBeforeAlarm = Number(sensorData.wrongsBeforeAlarm);
+      if (sensorData.notifications) bodyToSend.notifications = sensorData.notifications;
+  
+      const response = await axios.post(
+        "https://afuud4nek9.execute-api.sa-east-1.amazonaws.com/dev/sensors",
+        bodyToSend,
+        { headers: { "Content-Type": "application/json" } }
+      );
+    
+      // Verifica se a resposta tem .body e é string para parsear
+      const responseData = typeof response.data.body === "string" ? JSON.parse(response.data.body) : response.data;
+  
+      const updatedSensor = responseData.updated_item;
+      if (updatedSensor) {
+        localStorage.setItem("selectedDevice", JSON.stringify(updatedSensor));
+        alert("Sensor atualizado com sucesso!");
+        setOpenModal(false);
+      } else {
+        throw new Error("Resposta do servidor inválida.");
+      }
+  
     } catch (error) {
-      console.error("Error saving sensor details:", error);
-      alert("Failed to save sensor details.");
+      console.error("Erro salvando as informações do sensor:", error);
+      alert("Falha em salvar as informações do sensor.");
     }
   };
+  
 
-  const handleDeleteSensor = async () => {
+  const handleDeleteSensor = async() => {
     const confirmation = window.confirm("Are you sure you want to delete this sensor?");
     if (confirmation) {
       try {
@@ -108,49 +103,145 @@ const SensorDetailsPage = () => {
   };
 
   useEffect(() => {
-    setSelectedDevice(sensorId);
+    if (sensorId) {
+      setSelectedDevice(sensorId);
+    }
   }, [sensorId, setSelectedDevice]);
 
   const goBack = () => {
-    navigate(-1); // This takes you back to the previous page
+    navigate(-1);
   };
+
+  if (!data || data.length === 0 || !data[0]?.data) {
+    return (
+      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="80vh" gap={3}>
+        <CircularProgress size={60} thickness={4.5} sx={{ color: "rgb(42, 180, 234)" }} />
+        <Typography variant="h6" color="textSecondary" fontWeight={500}>
+          Coletando seus dados de temperatura...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box m="20px">
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Header title={sensorData.device_id}   subtitle={<strong>{sensorData.company} - {sensorData.type} </strong>} />
-          <Box display="flex" alignItems="center" gap="10px">
-            <IconButton onClick={goBack} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
-              <ArrowBackIcon />
-            </IconButton>
-            <IconButton onClick={handleOpenModal} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
-              <SettingsIcon />
-            </IconButton>
-            <IconButton onClick={downloadAll} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
-              <DownloadOutlinedIcon />
-            </IconButton>
-            <DateRangePicker
-              startDate={startDate}
-              setStartDate={setStartDate}
-              endDate={endDate}
-              setEndDate={setEndDate}
-            />
-          </Box>
-        </Box>
+        {isSmallScreen && (
+          <>
+            {/* Icons */}
+            <Box display="flex" gap={1} justifyContent="flex-start" flexWrap="wrap" mb={1}>
+              <IconButton onClick={goBack} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
+                <ArrowBackIcon />
+              </IconButton>
+              <IconButton onClick={handleOpenModal} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
+                <SettingsIcon />
+              </IconButton>
+              <IconButton onClick={downloadAll} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
+                <DownloadOutlinedIcon />
+              </IconButton>
+              <IconButton
+                onClick={() => setOpenNotifications(true)}
+                sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)", position: "relative" }}
+              >
+                <Notifications />
+                {sensorData?.notifications?.filter(n => !n.details?.solved).length > 0 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 1,
+                      right: 2,
+                      backgroundColor: "#ff7043",
+                      borderRadius: "50%",
+                      width: 18,
+                      height: 18,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: 11,
+                      border: `1px solid ${colors.primary[400]}`,
+                    }}
+                  >
+                    {sensorData.notifications.filter(n => !n.details?.solved).length}
+                  </Box>
+                )}
+              </IconButton>
+            </Box>
 
-        {/* Main content with chart */}
-        <Box
-          display="grid"
-          gridAutoRows="120px"
-          gap="20px"
-          gridTemplateColumns="repeat(12, 1fr)"
-        >
-          <Box
-            gridColumn={isSmallScreen ? "span 12" : "span 8"} // Full width on small screens
-            gridRow="span 2"
-            backgroundColor={colors.primary[400]}
-          >
+            {/* Header */}
+            <Header
+              title={sensorData.device_id}
+              subtitle={<strong>{sensorData.company} - {sensorData.type}</strong>}
+              style={{ marginBottom: 12 }}
+            />
+
+            {/* Date Picker */}
+            <Box mb={2}>
+              <DateRangePicker
+                startDate={startDate}
+                setStartDate={setStartDate}
+                endDate={endDate}
+                setEndDate={setEndDate}
+              />
+            </Box>
+          </>
+        )}
+
+        {/* Header and icons for large screens */}
+        {!isSmallScreen && (
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Header
+              title={sensorData.device_id}
+              subtitle={<strong>{sensorData.company} - {sensorData.type}</strong>}
+            />
+            <Box display="flex" gap={2}>
+              <IconButton onClick={goBack} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
+                <ArrowBackIcon />
+              </IconButton>
+              <IconButton onClick={handleOpenModal} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
+                <SettingsIcon />
+              </IconButton>
+              <IconButton onClick={downloadAll} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)" }}>
+                <DownloadOutlinedIcon />
+              </IconButton>
+              <IconButton onClick={() => setOpenNotifications(true)} sx={{ ...styles.iconButton, color: "rgb(42, 180, 234)", position: "relative" }}>
+                <Notifications />
+                {sensorData?.notifications?.filter(n => !n.details?.solved).length > 0 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 1,
+                      right: 2,
+                      backgroundColor: "#ff7043",
+                      borderRadius: "50%",
+                      width: 18,
+                      height: 18,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: 11,
+                      border: `1px solid ${colors.primary[400]}`
+                    }}
+                  >
+                    {sensorData.notifications.filter(n => !n.details?.solved).length}
+                  </Box>
+                )}
+              </IconButton>
+              <Box>
+                <DateRangePicker
+                  startDate={startDate}
+                  setStartDate={setStartDate}
+                  endDate={endDate}
+                  setEndDate={setEndDate}
+                />
+              </Box>
+            </Box>
+          </Box>
+        )}
+        <Box display="grid" gridAutoRows="120px" gap="20px" gridTemplateColumns="repeat(12, 1fr)">
+          <Box gridColumn={isSmallScreen ? "span 12" : "span 8"} gridRow="span 2"
+            backgroundColor={colors.primary[400]} >
             <Box mt="5px" p="0 30px" display="flex" justifyContent="space-between" alignItems="center">
               <Box display="flex" alignItems="center">
                 <Typography variant="h5" fontWeight="600" color={colors.grey[100]}>
@@ -171,7 +262,6 @@ const SensorDetailsPage = () => {
             </Box>
           </Box>
 
-          {/* Medidas Recentes */}
           {!isSmallScreen && (
             <Box
               gridColumn="span 4"
@@ -219,126 +309,14 @@ const SensorDetailsPage = () => {
               ))}
             </Box>
           )}
+
         </Box>
 
-        {/* Sensor Info */}
-
-        {/* Modal */}
-        <Dialog
-          open={openModal}
-          onClose={handleCloseModal}
-          sx={{
-            "& .MuiDialog-paper": {
-              padding: "10px",
-              borderRadius: "8px",
-              width: "400px",  // Set a fixed width for the modal
-            }
-          }}
-        >
-          <DialogTitle>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <IconButton onClick={handleCloseModal} sx={{ color: "rgb(42, 180, 234)" }}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Box>
-                <IconButton onClick={handleSaveSensorType} sx={{ color: "rgb(42, 180, 234)" }}>
-                  <SaveIcon />
-                </IconButton>
-                <IconButton onClick={handleDeleteSensor} sx={{ color: "rgb(42, 180, 234)" }}>
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              label="Local do Sensor"
-              value={sensorData.type}
-              onChange={(e) => setSensorData({ ...sensorData, type: e.target.value })}
-              margin="normal"
-              sx={{
-                marginBottom: "15px",
-                "& .MuiInputLabel-root": {
-                  // Only change label color when focused
-                  "&.Mui-focused": {
-                    color: "rgb(42, 180, 234)", // Blue color when focused
-                  }
-                },
-                "& .MuiOutlinedInput-root": {
-                  "&.Mui-focused fieldset": {
-                    borderColor: "rgb(42, 180, 234)", // Blue border on focus
-                  }
-                }
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Temperatura Máxima"
-              type="number"
-              value={sensorData.maxTemp}
-              onChange={(e) => setSensorData({ ...sensorData, maxTemp: e.target.value })}
-              margin="normal"
-              sx={{
-                marginBottom: "15px",
-                "& .MuiInputLabel-root": {
-                  // Only change label color when focused
-                  "&.Mui-focused": {
-                    color: "rgb(42, 180, 234)", // Blue color when focused
-                  }
-                },
-                "& .MuiOutlinedInput-root": {
-                  "&.Mui-focused fieldset": {
-                    borderColor: "rgb(42, 180, 234)", // Blue border on focus
-                  }
-                }
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Temperatura Mínima"
-              type="number"
-              value={sensorData.minTemp}
-              onChange={(e) => setSensorData({ ...sensorData, minTemp: e.target.value })}
-              margin="normal"
-              sx={{
-                marginBottom: "15px",
-                "& .MuiInputLabel-root": {
-                  // Only change label color when focused
-                  "&.Mui-focused": {
-                    color: "rgb(42, 180, 234)", // Blue color when focused
-                  }
-                },
-                "& .MuiOutlinedInput-root": {
-                  "&.Mui-focused fieldset": {
-                    borderColor: "rgb(42, 180, 234)", // Blue border on focus
-                  }
-                }
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Inconformidades Antes de Alarme"
-              type="number"
-              value={sensorData.wrongsBeforeAlarm}
-              onChange={(e) => setSensorData({ ...sensorData, wrongsBeforeAlarm: e.target.value })}
-              margin="normal"
-              sx={{
-                "& .MuiInputLabel-root": {
-                  // Only change label color when focused
-                  "&.Mui-focused": {
-                    color: "rgb(42, 180, 234)", // Blue color when focused
-                  }
-                },
-                "& .MuiOutlinedInput-root": {
-                  "&.Mui-focused fieldset": {
-                    borderColor: "rgb(42, 180, 234)", // Blue border on focus
-                  }
-                }
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <SettingsModal sensorData = {sensorData} setSensorData = {setSensorData} openModal={openModal} 
+          handleCloseModal = {handleCloseModal} handleSaveSensorType = {handleSaveSensorType} handleDeleteSensor = {handleDeleteSensor}/>
+        <TableComponent open={openNotifications} handleClose={() => setOpenNotifications(false)}
+          sensorData={sensorData} setSensorData={setSensorData} handleSaveSensorType={handleSaveSensorType}/>
+        
         <Snackbar open={openAlert} autoHideDuration={6000} onClose={() => setOpenAlert(false)}>
           <SnackbarContent
             message={alertMessage}

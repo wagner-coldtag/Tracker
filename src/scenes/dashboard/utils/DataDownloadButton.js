@@ -1,7 +1,7 @@
-import React from "react";
-import { Button, IconButton, Box } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { Button, IconButton, Box } from "@mui/material";
+import React from "react";
 
 const DataDownloadButtons = ({ data, refreshDevices, colors }) => (
   <Box display="flex" alignItems="center" gap="10px">

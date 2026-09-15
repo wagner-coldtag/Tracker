@@ -5,14 +5,15 @@ body,
 #root,
 .app,
 .content {
-  height: 100%;
-  width: 100%;
-  font-family: "Source Sans Pro", sans-serif;
+  flex-grow: 1;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .app {
   display: flex;
-  position: relative;
+  height: 100vh;
+  overflow: hidden;
 }
 
 ::-webkit-scrollbar {

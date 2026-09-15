@@ -1,8 +1,7 @@
-import React from "react";
-import { IconButton, Card, CardHeader, CardContent, Typography, Box,useTheme } from "@mui/material";
 import { Thermostat, Notifications } from "@mui/icons-material";
+import { IconButton, Card, CardHeader, CardContent, Typography, Box,useTheme } from "@mui/material";
+import React from "react";
 import { tokens } from "../../../theme";
-
 
 const SensorCard = ({ sensor, isSelected, onClick }) => {
   const theme = useTheme();
@@ -10,9 +9,9 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
   const getTemperatureColor = () => {
     if (sensor.maxTemp !== undefined || sensor.minTemp !== undefined) {
       if (sensor.last_temperature > sensor.maxTemp || sensor.last_temperature < sensor.minTemp) {
-        return "#ff7043";  // Color stays as is
+        return "#ff7043"; // Color stays as is
       } else {
-        return "rgb(41, 177, 237)";  // Within range, change color
+        return "rgb(41, 177, 237)"; // Within range, change color
       }
     }
     // If no maxTemp or minTemp, default color
@@ -24,6 +23,7 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
     <Card
       onClick={onClick}
       sx={{
+        maxWidth: 320, // largura máxima fixa
         border: isSelected ? "2px solid #1976d2" : "1px solid #ddd",
         borderRadius: 2,
         cursor: "pointer",
@@ -43,7 +43,7 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
         titleTypographyProps={{ variant: "h6", fontWeight: "bold" }}
         sx={{ p: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}
         action={
-          sensor.notifications && sensor.notifications.length > 0 ? (
+          sensor.notifications && sensor.notifications.some(notification => notification?.details?.solved === false) ? (
             <IconButton>
               <Notifications sx={{ color: "#ff7043", }} />
               <Box
@@ -63,7 +63,9 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
                   border: `1px solid ${colors.primary[400]}`
                 }}
               >
-                {sensor.notifications.length}
+                {sensor.notifications.filter(notification => notification?.details?.solved === false).length}
+
+
               </Box>
             </IconButton>
           ) : null
@@ -89,15 +91,15 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          flexDirection: "column",
+          gap: 0.5,
           paddingTop: 1,
           paddingBottom: 1,
           textAlign: "left",
-          gap: 2,  // Space out the two pieces of info
         }}
       >
         <Typography variant="body2" color="textSecondary">
-   Atualizado:{" "}
+          Atualizado:{" "}
           {sensor.last_timestamp
             ? new Date(sensor.last_timestamp * 1000).toLocaleString("pt-BR", {
               year: "numeric",
@@ -108,6 +110,18 @@ const SensorCard = ({ sensor, isSelected, onClick }) => {
             })
             : "N/A"}
         </Typography>
+
+        {sensor.predictions?.lastShelfLife !== undefined && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: "rgb(76, 175, 80)", // verde
+              fontWeight: "bold",
+            }}
+          >
+            Vida útil restante: {sensor.predictions.lastShelfLife.toFixed(1)} h
+          </Typography>
+        )}
       </Box>
     </Card>
   );

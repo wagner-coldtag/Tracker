@@ -1,14 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App";
+import { Provider } from "react-redux"; // Import Provider from react-redux
 import { BrowserRouter } from "react-router-dom";
+import { createStore, applyMiddleware } from "redux"; // Correct import
+import { thunk } from "redux-thunk"; // Use named import for thunk
+import App from "./App";
 import UserProvider from "./context/UserProvider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import rootReducer from "./reducers"; // Import your root reducer
-import { createStore, applyMiddleware } from "redux"; // Correct import
-import { thunk } from "redux-thunk"; // Use named import for thunk
-import { Provider } from "react-redux"; // Import Provider from react-redux
 
 const store = createStore(
   rootReducer, // Your root reducer

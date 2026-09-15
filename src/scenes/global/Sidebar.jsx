@@ -1,37 +1,48 @@
-import { useState, useEffect } from "react";
-import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { Box, IconButton, Typography, useTheme, useMediaQuery } from "@mui/material";
-import { Link } from "react-router-dom";
-import "react-pro-sidebar/dist/css/styles.css";
-import { tokens } from "../../theme";
-import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
-import Logo from "./Logo.png";
-import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import ArticleIcon from "@mui/icons-material/Article";
+import AssistantIcon from "@mui/icons-material/Assistant";
 import BluetoothIcon from "@mui/icons-material/Bluetooth";
+import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
+import MapIcon from "@mui/icons-material/Map";
+import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import QueryStatsIcon from "@mui/icons-material/QueryStats";
+import { Box, IconButton, Typography, useTheme, useMediaQuery } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
+import { Link , useLocation } from "react-router-dom";
+import Logo from "./Logo.png";
+import { tokens } from "../../theme";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+
   return (
     <MenuItem
       active={selected === title}
-      style={{
-        color: colors.grey[100],
-      }}
+
       onClick={() => setSelected(title)}
       icon={icon}
+      component={<Link to={to} />} // Fix: Use "component" prop instead of nesting <Link />
     >
       <Typography>{title}</Typography>
-      <Link to={to} />
     </MenuItem>
   );
 };
 
-const Sidebar = () => {
+
+const ProSidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selected, setSelected] = useState("Temperature");
+  const location = useLocation();
+  const [selected, setSelected] = useState(() => {
+    const pathToTitle = {
+      "/": "Temperatura",
+      "/indicadores": "Indicadores",
+      "/report": "Relatórios",
+      "/RSSI": "Conectividade",
+      "/maps": "Mapas",
+    };
+    return pathToTitle[location.pathname] || "Temperatura";
+  });
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // Check if the screen is small
 
   useEffect(() => {
@@ -39,28 +50,30 @@ const Sidebar = () => {
   }, [isSmallScreen]); // Run this effect whenever isSmallScreen changes
 
   return (
+
     <Box
       sx={{
-        "& .pro-sidebar-inner": {
-          background: `${colors.primary[400]} !important`,
-        },
-        "& .pro-icon-wrapper": {
-          backgroundColor: "transparent !important",
-        },
-        "& .pro-inner-item": {
-          padding: "5px 35px 5px 20px !important",
-        },
-        "& .pro-inner-item:hover": {
-          color: "rgb(0, 120, 180) !important",
-        },
-        "& .pro-menu-item.active": {
-          color: "rgb(42, 180, 234) !important",
-        },
+        height: "100vh",
+        backgroundColor: colors.primary[400]
       }}
     >
-      <ProSidebar collapsed={isCollapsed}>
-        <Menu iconShape="square">
-          {/* LOGO AND MENU ICON */}
+      <Sidebar collapsed={isCollapsed} 
+        backgroundColor= {colors.primary[400]}
+      >
+        <Menu 
+          menuItemStyles={{
+            button: ({ level, active }) => {
+              if (level === 0 || level === 1 ) {
+                return {
+                  color: active ? "rgb(42, 180, 234)" : "" ,
+                  "&:hover" : {
+                    color:  "rgb(20, 120, 180)",
+                  }
+                };
+              }
+            },
+          }}
+        >
           <MenuItem
             onClick={() => setIsCollapsed(!isCollapsed)}
             icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
@@ -123,17 +136,45 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
             <Item
+              title="Indicadores"
+              to="/indicadores"
+              icon={<QueryStatsIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="Predição de Shelf life"
+              to="/ia"
+              icon={<AssistantIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="Relatórios"
+              to="/report"
+              icon={<ArticleIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
               title="Conectividade"
               to="/RSSI"
               icon={<BluetoothIcon />}
               selected={selected}
               setSelected={setSelected}
             />
+            <Item
+              title="Mapas"
+              to="/maps"
+              icon={<MapIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
           </Box>
         </Menu>
-      </ProSidebar>
+      </Sidebar>
     </Box>
   );
 };
 
-export default Sidebar;
+export default ProSidebar;

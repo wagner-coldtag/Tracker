@@ -1,16 +1,16 @@
-import { Box, IconButton, useTheme, Menu, MenuItem, Typography } from "@mui/material";
-import { useContext, useState } from "react";
-import { ColorModeContext, tokens } from "../../theme";
-import InputBase from "@mui/material/InputBase";
-import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import LogoutIcon from "@mui/icons-material/Logout"; 
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import LogoutIcon from "@mui/icons-material/Logout"; // Door/Logout icon
-import { UserState } from "../../context/UserProvider";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import { Box, IconButton, useTheme, Menu, MenuItem, Typography } from "@mui/material";
+import InputBase from "@mui/material/InputBase";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { UserState } from "../../context/UserProvider";
+import { ColorModeContext, tokens } from "../../theme";
 
 const Topbar = () => {
   const theme = useTheme();

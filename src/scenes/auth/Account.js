@@ -1,9 +1,9 @@
 // AccountSettings.js
-import React, { useState } from "react";
 import { TextField, Button, Typography, Snackbar, Alert, Box } from "@mui/material";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { checkPassword, passwordChange } from "../../actions/Auth";
 import { useNavigate } from "react-router-dom";
+import { checkPassword, passwordChange } from "../../actions/Auth";
 
 
 const AccountSettings = () => {
@@ -19,7 +19,7 @@ const AccountSettings = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handlePasswordVerification = async () => {
+  const handlePasswordVerification = async() => {
     if (!currentPassword) {
       setMessage("Informe sua senha pessoal para ter acesso a mudanças no seu perfil!");
       setAlertType("warning");
@@ -46,7 +46,7 @@ const AccountSettings = () => {
   };
 
 
-  const handlePasswordChange = async () => {
+  const handlePasswordChange = async() => {
     if (!newPassword || !confirmPassword) {
       setMessage("Please fill out both password fields.");
       setAlertType("warning");

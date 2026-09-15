@@ -1,13 +1,15 @@
+import { Grid, Paper, Button, Typography, Snackbar, Alert, Box, TextField,FormControlLabel, Checkbox } from "@mui/material";
 import React, { useState } from "react";
-import { Grid, Paper, Button, Divider, Typography, Snackbar, Alert, Box, TextField } from "@mui/material";
-import { GoogleLogin } from "@react-oauth/google";
-import Logo from "../global/Logo.jpeg";
-import { useNavigate } from "react-router-dom";
-import { UserState } from "../../context/UserProvider";
+import PhoneInput from "react-phone-input-2";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { login, signUp } from "../../actions/Auth.js";
+import { UserState } from "../../context/UserProvider";
+import Logo from "../global/Logo.jpeg";
+import "react-phone-input-2/lib/style.css";
 
 const Auth = () => {
+
 
   const [form, setForm] = useState({
     email: "",
@@ -15,7 +17,10 @@ const Auth = () => {
     confirmPassword: "",
     company: "",
     surname: "",
-    name: ""
+    name: "",
+    phone: "",
+    notificationEnabled: false
+
   });
   const [isSignUp, setIsSignUp] = useState(false);
   const [notification, setNotification] = useState({ text: "", severity: "error" });
@@ -25,22 +30,43 @@ const Auth = () => {
   const dispatch = useDispatch();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleCaptcha = (e) => setForm({ ...form, notificationEnabled: e.target.checked });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
+  
     if (isSignUp && form.password !== form.confirmPassword) {
       showAlert("Passwords do not match.", "error");
       return;
     }
-    const userData = isSignUp ? { ...form, role: "Normal" } : { email: form.email, password: form.password };
+  
+    const userData = isSignUp
+      ? { ...form, role: "Normal" }
+      : { email: form.email, password: form.password };
+  
     try {
-      const loginError = await dispatch(isSignUp ? signUp(userData) : login(form.email, form.password));
-      if (loginError) {
-        setNotification({ text: loginError, severity: "error" });
+      const response = await dispatch(isSignUp ? signUp(userData) : login(form.email, form.password));
+  
+      if (response) {
+        setNotification({ text: response, severity: "error" });
         setShowNotification(true);
       } else {
-        setLoggedIn(true);
-        navigate("/");
+        if (isSignUp) {
+          // Show success message
+          setNotification({
+            text: "Sua solicitação de abertura de conta foi enviada aos administradores e será resolvida em, no máximo, 24 horas.",
+            severity: "success",
+          });
+          setShowNotification(true);
+  
+          // Redirect after a delay
+          setTimeout(() => {
+            window.location.href = "https://coldtagsolutions.com";
+          }, 3000); // Redirect after 3 seconds
+        } else {
+          setLoggedIn(true);
+          navigate("/");
+        }
       }
     } catch (error) {
       showAlert(error.message || "Action failed", "error");
@@ -51,9 +77,6 @@ const Auth = () => {
     setNotification({ text, severity });
     setShowNotification(true);
   };
-
-  const googleSuccess = (res) => console.log(res);
-  const googleFailure = (error) => showAlert("Google login failed. Try again.", error);
 
   return (
     <Grid container justifyContent="center" alignItems="center" style={{ height: "100vh", backgroundColor: "#f5f5f5" }}>
@@ -67,19 +90,13 @@ const Auth = () => {
           </Typography>
           <form onSubmit={handleSubmit} style={{ width: "100%" }}>
             <Box display="flex" flexDirection="column" alignItems="center" sx={{ mb: 2 }}>
-              <FormFields form={form} isSignUp={isSignUp} handleChange={handleChange} />
+              <FormFields form={form} isSignUp={isSignUp} handleChange={handleChange} handleCaptcha={handleCaptcha} />
             </Box>
             <Button type="submit" variant="contained" color="primary"
               style={{ width: "270px", height: "45px", fontSize: "1rem", margin: "16px auto", display: "block", backgroundColor: "rgb(30,182,250)", color: "white" }}
             >
               {isSignUp ? "Sign Up" : "Log In"}
             </Button>
-            <Divider sx={{ my: 2 }}>OR</Divider>
-            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-              <GoogleLogin onSuccess={googleSuccess} onFailure={googleFailure}
-                style={{ width: "270px", marginBottom: "16px" }}
-              />
-            </div>
             <Typography onClick={() => setIsSignUp(!isSignUp)} component="span"
               style={{
                 display: "block",
@@ -102,21 +119,60 @@ const Auth = () => {
     </Grid>
   );
 };
+const PhoneTextField = ({ value, handleChange }) => (
+  <PhoneInput
+    country={"br"} // Default country (Brazil in this case)
+    value={value}
+    onChange={(phone) => handleChange({ target: { name: "phone", value: phone } })}
+    inputStyle={{
+      width: "270px",
+      height: "45px",
+      fontSize: "1rem",
+      paddingLeft: "48px",
+    }}
 
-const FormFields = ({ form, isSignUp, handleChange }) => (
+
+    containerStyle={{ paddingLeft: "19px" }}
+  />
+);
+
+const FormFields = ({ form, isSignUp, handleChange, handleCaptcha }) => (
+  
   <>
     {isSignUp && (
       <>
-        <CustomTextField label="Name" name="name" value={form.name} handleChange={handleChange} />
-        <CustomTextField label="Surname" name="surname" value={form.surname} handleChange={handleChange} />
+        <CustomTextField label="Nome" name="name" value={form.name} handleChange={handleChange} />
+        <CustomTextField label="Sobrenome" name="surname" value={form.surname} handleChange={handleChange} />
       </>
     )}
-    <CustomTextField label="Email" name="email" type="email" value={form.email} handleChange={handleChange} />
-    <CustomTextField label="Password" name="password" type="password" value={form.password} handleChange={handleChange} />
+    <CustomTextField label="E-mail" name="email" type="email" value={form.email} handleChange={handleChange} />
+
+    <CustomTextField label="Senha" name="password" type="password" value={form.password} handleChange={handleChange} />
     {isSignUp && (
       <>
-        <CustomTextField label="Confirm Password" name="confirmPassword" type="password" value={form.confirmPassword} handleChange={handleChange} />
-        <CustomTextField label="Company" name="company" value={form.company} handleChange={handleChange} />
+        <CustomTextField label="Confirmar Senha" name="confirmPassword" type="password" value={form.confirmPassword} handleChange={handleChange} />
+        <CustomTextField label="Empresa" name="company" value={form.company} handleChange={handleChange} />
+        <div style={{ paddingTop: "14px"}}></div>
+        <PhoneTextField value={form.phone} handleChange={handleChange} />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={form.notificationEnabled}
+              onChange={handleCaptcha}
+              color="primary" // This makes the checkbox blue when checked
+              sx={{
+                "&.Mui-checked": {
+                  color: "rgb(30,182,250)", // Blue color for checked state
+                },
+                "&.Mui-focusVisible": {
+                  outline: `2px solid rgb(30,182,250)`, // Blue outline when focused (touched)
+                },
+              }}
+            />
+          }
+          label="Aceito receber notificações por celular."
+          sx={{ display: "block", textAlign: "center", mt: 1, mb: 1 }}
+        />
       </>
     )}
   </>
