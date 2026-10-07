@@ -1,68 +1,112 @@
-import { Card, CardContent, Typography, useTheme } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { tokens } from "../../theme";
 
-const AlarmBar = ({ data, title, barColor, height = 150, dataKey = "alarms" }) => { 
+const AlarmBar = ({
+  data,
+  title,
+  barColor,
+  height = 200,
+  dataKey = "alarms",
+  unit = "", // shown in the tooltip, e.g. "min"
+  allowDecimals = false, // y-axis ticks; true for averages
+}) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const okColor = colors.blueAccent[500];
+  const axisColor = theme.palette.text.secondary;
+  const fill = barColor || okColor;
+  const isEmpty = !data || data.length === 0;
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const raw = Number(payload[0].value);
+    const value = Number.isInteger(raw) ? raw : raw.toFixed(1);
+    return (
+      <Box
+        sx={{
+          backgroundColor: colors.primary[400],
+          border: `1px solid ${colors.grey[700]}`,
+          borderLeft: `4px solid ${okColor}`,
+          borderRadius: 2,
+          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+          px: 1.5,
+          py: 1,
+        }}
+      >
+        <Typography variant="caption" sx={{ color: axisColor }}>
+          {label}
+        </Typography>
+        <Typography variant="h5" fontWeight="bold" sx={{ color: okColor }}>
+          {value}
+          {unit ? ` ${unit}` : ""}
+        </Typography>
+      </Box>
+    );
+  };
+
   return (
-    <Card elevation={5} sx={{ backgroundColor: colors.primary[400]}}>
-      <CardContent>
-        <Typography variant="h5" gutterBottom align="center"
+    <Box
+      sx={{
+        borderRadius: 3,
+        backgroundColor: colors.primary[400],
+        p: 2,
+        height: "100%",
+      }}
+    >
+      <Typography variant="h5" fontWeight="600" sx={{ mb: 1.5 }}>
+        {title}
+      </Typography>
+
+      {isEmpty ? (
+        <Box
           sx={{
-            fontFamily: '"Montserrat", sans-serif',
-            fontWeight: 600,
-            mt: -1,
-            mb: 1,
+            height,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: colors.grey[300],
           }}
         >
-          {title}
-        </Typography>
+          <Typography variant="body2">Sem dados no período</Typography>
+        </Box>
+      ) : (
         <ResponsiveContainer width="100%" height={height}>
-          <BarChart data={data} margin={{ top: 0, right: 10, left: -42, bottom: -12 }}>
-            <CartesianGrid strokeDasharray="3 3" />
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={colors.grey[700]}
+              opacity={0.5}
+            />
             <XAxis
               dataKey="day"
-              tickLine={{ stroke: "#000", strokeWidth: 2 }}
-              axisLine={{ stroke: "#000", strokeWidth: 2 }}
-              tick={{ fill: "#000", fontWeight: "bold" }}
+              tick={{ fill: axisColor, fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+              tickMargin={8}
+              minTickGap={16}
             />
             <YAxis
-              tickLine={{ stroke: "#000", strokeWidth: 2 }}
-              axisLine={{ stroke: "#000", strokeWidth: 2 }}
-              tick={{ fill: "#000", fontWeight: "bold" }}
+              allowDecimals={allowDecimals}
+              tick={{ fill: axisColor, fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+              width={32}
             />
-            <Tooltip
-              content={({ payload, label }) => {
-                if (!payload || payload.length === 0) return null;
-
-                const barData = payload[0]; // Assume a única barra é o primeiro item
-                const value = barData.value;
-
-                return (
-                  <div
-                    style={{
-                      backgroundColor: colors.primary[500],
-                      color: "white",
-                      border: "1px solid white",
-                      padding: "5px 8px",
-                      borderRadius: "5px",
-                      lineHeight: "1.2",
-                      minWidth: "100px",
-                    }}
-                  >
-                    <p style={{ margin: 2 }}>{`Dia: ${label}`}</p>
-                    <p style={{ margin: 0 }}>{`${title}: ${value}`}</p>
-                  </div>
-                );
-              }}
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: okColor, fillOpacity: 0.08 }} />
+            <Bar
+              dataKey={dataKey}
+              fill={fill}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={32}
+              isAnimationActive={false}
             />
-            <Bar dataKey={dataKey} fill={barColor} radius={[5, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      )}
+    </Box>
   );
 };
-  
+
 export default AlarmBar;

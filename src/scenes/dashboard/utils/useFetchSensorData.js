@@ -23,7 +23,7 @@ const useFetchSensorData = () => {
   const isInitialized = useRef(false);
 
   // company único e consistente, usado em todas as chamadas
-  const company = user?.company;
+  const company = user?.Company;
 
   const fetchDevices = async () => {
     try {
@@ -44,6 +44,7 @@ const useFetchSensorData = () => {
       const response = await axios.get(
         `https://nrsx9ksod5.execute-api.sa-east-1.amazonaws.com/prod/sensors?company=${encodeURIComponent(company)}`
       );
+
       const jsonData = response?.data || [];
 
       const hasNoType = jsonData.some((item) => !item.type);
@@ -127,7 +128,7 @@ const useFetchSensorData = () => {
     };
 
     fetchSensorDataAndSetType();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   useEffect(() => {
     const fetchPackageData = async () => {

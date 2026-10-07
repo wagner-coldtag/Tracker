@@ -1,34 +1,60 @@
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import { useTheme , Box, Typography } from "@mui/material";
+import { useTheme, Box, Typography } from "@mui/material";
 import React from "react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceArea,
+  ReferenceLine,
+  ResponsiveContainer,
 } from "recharts";
 import { tokens } from "../theme";
+
+// Same soft red used in SensorCard / SensorDetailsPage
+const ALERT_COLOR = "#e5695a";
+
+const isValidLimit = (v) => v !== undefined && v !== null && v !== "" && !Number.isNaN(Number(v));
+
+const clamp01 = (n) => Math.min(1, Math.max(0, n));
+
+const formatTick = (value) =>
+  new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const formatFull = (value) =>
+  new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 const Chart = ({ data, tempMin, tempMax }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const okColor = colors.blueAccent[500];
+  const axisColor = theme.palette.text.secondary;
 
-  // Check if data is valid
-  if (!data || !Array.isArray(data) || data.length < 2) {
-    return <div>No data available for the chart.</div>; // Fallback if data is not valid
-  }
+  const hasMin = isValidLimit(tempMin);
+  const hasMax = isValidLimit(tempMax);
+  const min = hasMin ? Number(tempMin) : null;
+  const max = hasMax ? Number(tempMax) : null;
 
-  // Convert data to the format required by Recharts
-  const transformedData = data[0]?.data.map((tempPoint) => {
-    const time = tempPoint.x * 1000; // Keep `time` as a numeric timestamp in milliseconds
-    const Temperatura = typeof tempPoint.y === "number" ? tempPoint.y.toFixed(1) : 0;
-    return { time, Temperatura };
-  }) || [];
+  const isOut = (v) => (hasMax && v > max) || (hasMin && v < min);
 
-  // Calculate min and max for the Y axis
-  const TValues = transformedData.map((d) => d.Temperatura);
-  const TMin = Math.floor(Math.min(...TValues)) - 3;
-  const TMax = Math.floor(Math.max(...TValues)) + 3;
-
-  const tempMinLine = tempMin ? transformedData.map((point) => ({ time: point.time, Mínimo: tempMin })) : [];
-  const tempMaxLine = tempMax ? transformedData.map((point) => ({ time: point.time, Máximo: tempMax })) : [];
+  // Convert to the format Recharts expects (Temperatura is a real number)
+  const transformedData = (data?.[0]?.data ?? [])
+    .filter((p) => typeof p.y === "number")
+    .map((p) => ({ time: p.x * 1000, Temperatura: Number(p.y.toFixed(1)) }));
 
   if (transformedData.length === 0) {
     return (
@@ -37,124 +63,166 @@ const Chart = ({ data, tempMin, tempMax }) => {
         flexDirection="column"
         justifyContent="center"
         alignItems="center"
-        height="200px"
-        border="1px dashed"
-        borderColor={colors.grey[600]}
-        borderRadius="10px"
-        bgcolor={colors.primary[400]}
-        mt={4} p={2}
+        height="100%"
+        minHeight="200px"
+        p={2}
       >
-        <ErrorOutlineIcon sx={{ fontSize: 48, color: "rgb(255, 115, 115)", mb: 1 }} />
-        <Typography variant="h6" color={colors.grey[100]} align="center">
+        <ErrorOutlineIcon sx={{ fontSize: 48, color: ALERT_COLOR, mb: 1 }} />
+        <Typography variant="h6" align="center">
           Este sensor não possui dados de temperatura no período informado.
         </Typography>
-        <Typography variant="body2" color={colors.grey[300]} align="center" mt={1}>
+        <Typography variant="body2" color="text.secondary" align="center" mt={1}>
           Verifique se o dispositivo está conectado ou ativo.
         </Typography>
       </Box>
     );
   }
 
+  // Data extent (loop avoids stack issues with Math.min(...bigArray))
+  let dataLow = Infinity;
+  let dataHigh = -Infinity;
+  for (const d of transformedData) {
+    if (d.Temperatura < dataLow) dataLow = d.Temperatura;
+    if (d.Temperatura > dataHigh) dataHigh = d.Temperatura;
+  }
+
+  // Y domain: cover both the readings and the ideal range
+  let low = dataLow;
+  let high = dataHigh;
+  if (hasMin) low = Math.min(low, min);
+  if (hasMax) high = Math.max(high, max);
+  const yDomain = [Math.floor(low) - 1, Math.ceil(high) + 1];
+
+  // Stroke gradient: where the limits fall along the line's vertical extent (0 = top, 1 = bottom)
+  const dataRange = dataHigh - dataLow;
+  const isFlat = dataRange === 0; // a gradient can't render on a perfectly flat line
+  const offMax = !isFlat && hasMax ? clamp01((dataHigh - max) / dataRange) : 0;
+  const offMin = !isFlat && hasMin ? clamp01((dataHigh - min) / dataRange) : 1;
+  const lineStroke = isFlat
+    ? isOut(dataHigh) ? ALERT_COLOR : okColor
+    : "url(#temperatureStroke)";
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const value = payload[0].value;
+    const out = isOut(value);
+    return (
+      <Box
+        sx={{
+          backgroundColor: colors.primary[400],
+          border: `1px solid ${out ? ALERT_COLOR : colors.grey[700]}`,
+          borderLeft: `4px solid ${out ? ALERT_COLOR : okColor}`,
+          borderRadius: 2,
+          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+          px: 1.5,
+          py: 1,
+        }}
+      >
+        <Typography variant="caption" sx={{ color: axisColor }}>
+          {formatFull(label)}
+        </Typography>
+        <Typography variant="h5" fontWeight="bold" sx={{ color: out ? ALERT_COLOR : okColor }}>
+          {value}°C
+        </Typography>
+        {out && (
+          <Typography variant="caption" sx={{ color: ALERT_COLOR }}>
+            Fora da faixa
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={transformedData} margin={{ top: 40, right: 0, bottom: 50, left: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={colors.grey[600]} />
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart data={transformedData} margin={{ top: 20, right: 24, bottom: 8, left: 0 }}>
+        <defs>
+          {/* Soft fade under the line */}
+          <linearGradient id="temperatureGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={okColor} stopOpacity={0.35} />
+            <stop offset="100%" stopColor={okColor} stopOpacity={0} />
+          </linearGradient>
+
+          {/* Line color: blue inside the range, coral above max / below min */}
+          <linearGradient id="temperatureStroke" x1="0" y1="0" x2="0" y2="1">
+            <stop offset={0} stopColor={ALERT_COLOR} />
+            <stop offset={offMax} stopColor={ALERT_COLOR} />
+            <stop offset={offMax} stopColor={okColor} />
+            <stop offset={offMin} stopColor={okColor} />
+            <stop offset={offMin} stopColor={ALERT_COLOR} />
+            <stop offset={1} stopColor={ALERT_COLOR} />
+          </linearGradient>
+        </defs>
+
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.grey[700]} opacity={0.5} />
+
         <XAxis
           dataKey="time"
-          type="number" // Use numeric values for the x-axis
-          domain={["dataMin", "dataMax"]} // Optional: automatically adjust to the data range
-          tickFormatter={(value) => new Date(value).toLocaleString()} // Format for readable labels
-          stroke={colors.grey[100]}
-          tick={{ fill: colors.grey[100] }}
-          axisLine={{ stroke: colors.grey[600] }}
+          type="number"
+          domain={["dataMin", "dataMax"]}
+          scale="time"
+          tickFormatter={formatTick}
+          tick={{ fill: axisColor, fontSize: 12 }}
+          axisLine={false}
+          tickLine={false}
+          minTickGap={48}
+          tickMargin={8}
         />
 
-        {/* Primary Y-Axis for Temperature */}
         <YAxis
-          yAxisId="left"
-          label={{ value: "Temperatura (°C)", angle: -90, fill: colors.grey[100], dx: -10 }}
-          stroke={colors.grey[100]}
-          tick={{ fill: colors.grey[100] }}
-          axisLine={{ stroke: colors.grey[600] }}
-          domain={[TMin, TMax]} // Ensure the domain includes the temperature range
+          domain={yDomain}
+          tickFormatter={(v) => `${v}°`}
+          tick={{ fill: axisColor, fontSize: 12 }}
+          axisLine={false}
+          tickLine={false}
+          width={44}
         />
 
-        <Tooltip
-          content={({ payload, label }) => {
-            if (!payload || payload.length === 0) return null;
+        {/* Ideal range band */}
+        {hasMin && hasMax && <ReferenceArea y1={min} y2={max} fill={okColor} fillOpacity={0.08} />}
 
-            const temperatureData = payload.find(item => item.dataKey === "Temperatura");
+        {/* Limit lines */}
+        {hasMax && (
+          <ReferenceLine
+            y={max}
+            stroke={ALERT_COLOR}
+            strokeDasharray="6 4"
+            strokeOpacity={0.8}
+            label={{ value: `Máx ${max}°`, position: "insideTopRight", fill: ALERT_COLOR, fontSize: 11 }}
+          />
+        )}
+        {hasMin && (
+          <ReferenceLine
+            y={min}
+            stroke={ALERT_COLOR}
+            strokeDasharray="6 4"
+            strokeOpacity={0.8}
+            label={{ value: `Mín ${min}°`, position: "insideBottomRight", fill: ALERT_COLOR, fontSize: 11 }}
+          />
+        )}
 
-            if (temperatureData) {
-              const temperature = temperatureData.value;
-              const formattedDate = new Date(label).toLocaleString();
+        <Tooltip content={<CustomTooltip />} cursor={{ stroke: colors.grey[500], strokeDasharray: "4 4" }} />
 
-              // Only return the temperature information in the tooltip
-              return (
-                <div
-                  style={{
-                    backgroundColor: colors.primary[500],
-                    color: "white",
-                    border: "1px solid white",
-                    padding: "5px 8px", // Reduced vertical padding
-                    borderRadius: "5px",
-                    lineHeight: "1.2", // Reduced line-height for less vertical space
-                    minWidth: "100px", // Optional: set a minimum width for consistency
-                  }}
-                >
-                  <p style={{ margin: 2 }}>{formattedDate}</p>
-                  <p style={{ margin: 0 }}>{`Temperatura: ${temperature} °C`}</p>
-                </div>
-              );
-            }
-
-            return null; // Return nothing if no temperature data found
-          }}
-        />
-
-
-        <Legend
-          wrapperStyle={{ color: colors.grey[100] }}
-          itemStyle={{ color: colors.grey[100] }}
-          iconSize={8}
-        />
-
-        {/* Line for Temperature */}
-        <Line
-          yAxisId="left"
+        <Area
           type="monotone"
           dataKey="Temperatura"
-          stroke={colors.greenAccent[500]}
-          strokeWidth={2}
-          dot={false} // Remove dots if desired
+          stroke={lineStroke}
+          strokeWidth={2.5}
+          fill="url(#temperatureGradient)"
+          dot={false}
+          activeDot={({ cx, cy, payload }) => (
+            <circle
+              cx={cx}
+              cy={cy}
+              r={5}
+              fill={isOut(payload.Temperatura) ? ALERT_COLOR : okColor}
+              stroke={colors.primary[400]}
+              strokeWidth={2}
+            />
+          )}
+          isAnimationActive={false}
         />
-
-        {/* Plot TempMin Line */}
-        {tempMin && (
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="Mínimo"
-            stroke="blue" // Set the line color for TempMin
-            strokeWidth={0.5}
-            dot={false}
-            data={tempMinLine} // Map to a constant y-value for TempMin
-          />
-        )}
-
-        {/* Plot TempMax Line */}
-        {tempMax && (
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="Máximo"
-            stroke="red" // Set the line color for TempMax
-            strokeWidth={0.5}
-            dot={false}
-            data={tempMaxLine} // Map to a constant y-value for TempMax
-          />
-        )}
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 };

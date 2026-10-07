@@ -2,6 +2,13 @@ import { createContext, useState, useMemo } from "react";
 import { createTheme } from "@mui/material/styles";
 
 // color design tokens export
+//
+// Convention: an index means the same *role* in both modes.
+//   primary[400] = card / surface        primary[500] = page background
+//   primary[600..900] = progressively deeper surfaces than the page
+//   primary[100..300] = muted foreground tones
+//   grey / accent scales are index-reversed in light mode (100 = highest contrast,
+//   500 = anchor color, identical in both modes).
 export const tokens = (mode) => ({
   ...(mode === "dark"
     ? {
@@ -20,8 +27,8 @@ export const tokens = (mode) => ({
         100: "#d0d1d5",
         200: "#a1a4ab",
         300: "#727681",
-        400: "#1F2A40",
-        500: "#141b2d",
+        400: "#1F2A40", // card / surface
+        500: "#141b2d", // page background
         600: "#101624",
         700: "#0c101b",
         800: "#080b12",
@@ -49,16 +56,17 @@ export const tokens = (mode) => ({
         800: "#58201e",
         900: "#2c100f",
       },
+      // Brand blue, anchored at 500 = #1BB5F7
       blueAccent: {
-        100: "#e1e2fe",
-        200: "#c3c6fd",
-        300: "#a4a9fc",
-        400: "#868dfb",
-        500: "#6870fa",
-        600: "#535ac8",
-        700: "#3e4396",
-        800: "#2a2d64",
-        900: "#151632",
+        100: "#EAF6FE",
+        200: "#D2ECFC",
+        300: "#9FDCFA",
+        400: "#57C4F8",
+        500: "#1BB5F7",
+        600: "#0B8FD6",
+        700: "#0B63C4",
+        800: "#083F7D",
+        900: "#0A2540",
       },
     }
     : {
@@ -74,15 +82,15 @@ export const tokens = (mode) => ({
         900: "#e0e0e0",
       },
       primary: {
-        100: "#040509",
-        200: "#080b12",
-        300: "#0c101b",
-        400: "#f2f0f0", // manually changed
-        500: "#141b2d",
-        600: "#1F2A40",
-        700: "#727681",
-        800: "#a1a4ab",
-        900: "#d0d1d5",
+        100: "#2b3247", // muted foreground tones (dark, on a light page)
+        200: "#4a5166",
+        300: "#727681",
+        400: "#f2f0f0", // card / surface
+        500: "#fcfcfc", // page background
+        600: "#e8e6e6", // deeper than the page, like dark mode
+        700: "#d6d4d4",
+        800: "#c4c2c2",
+        900: "#b0aeae",
       },
       greenAccent: {
         100: "#0f2922",
@@ -106,18 +114,24 @@ export const tokens = (mode) => ({
         800: "#f1b9b7",
         900: "#f8dcdb",
       },
+      // Same brand-blue scale as dark mode, index-reversed. 500 stays the
+      // exact same hex in both modes.
       blueAccent: {
-        100: "#151632",
-        200: "#2a2d64",
-        300: "#3e4396",
-        400: "#535ac8",
-        500: "#6870fa",
-        600: "#868dfb",
-        700: "#a4a9fc",
-        800: "#c3c6fd",
-        900: "#e1e2fe",
+        100: "#0A2540",
+        200: "#083F7D",
+        300: "#0B63C4",
+        400: "#0B8FD6",
+        500: "#1BB5F7",
+        600: "#57C4F8",
+        700: "#9FDCFA",
+        800: "#D2ECFC",
+        900: "#EAF6FE",
       },
     }),
+
+  // Semantic colors, identical in both modes
+  brand: "#1BB5F7", // "in range" / primary actions
+  alert: "#e5695a", // "out of range" / destructive (soft red)
 });
 
 // mui theme settings
@@ -126,40 +140,25 @@ export const themeSettings = (mode) => {
   return {
     palette: {
       mode: mode,
-      ...(mode === "dark"
-        ? {
-          // palette values for dark mode
-          primary: {
-            main: colors.primary[500],
-          },
-          secondary: {
-            main: colors.greenAccent[500],
-          },
-          neutral: {
-            dark: colors.grey[700],
-            main: colors.grey[500],
-            light: colors.grey[100],
-          },
-          background: {
-            default: colors.primary[500],
-          },
-        }
-        : {
-          primary: {
-            main: colors.primary[100],
-          },
-          secondary: {
-            main: colors.greenAccent[500],
-          },
-          neutral: {
-            dark: colors.grey[700],
-            main: colors.grey[500],
-            light: colors.grey[100],
-          },
-          background: {
-            default: "#fcfcfc",
-          },
-        }),
+      // One palette definition for both modes: the tokens already carry the differences.
+      primary: {
+        main: colors.blueAccent[500],
+      },
+      secondary: {
+        main: colors.greenAccent[500],
+      },
+      error: {
+        main: colors.alert,
+      },
+      neutral: {
+        dark: colors.grey[700],
+        main: colors.grey[500],
+        light: colors.grey[100],
+      },
+      background: {
+        default: colors.primary[500],
+        paper: colors.primary[400],
+      },
     },
     typography: {
       fontFamily: ["Source Sans Pro", "sans-serif"].join(","),

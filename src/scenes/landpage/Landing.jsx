@@ -41,6 +41,11 @@ import {
 
 const NAVBAR_HEIGHT = { xs: 64, md: 72 };
 
+// Shared button radius: a smaller, sharper radius reads more technical /
+// engineering-grade than a fully-rounded pill, which is the default look
+// of nearly every consumer SaaS landing page.
+const BUTTON_RADIUS = "10px";
+
 // ===== Translation dictionary =====
 const translations = {
   pt: {
@@ -58,6 +63,11 @@ const translations = {
     ctaPrimary: "Solicitar Demonstração",
     ctaSecondary: "Ver Plataforma",
     liveBadge: "Monitoramento em tempo real",
+    liveStats: [
+      { label: "Sensores ativos", value: "1.2k+" },
+      { label: "Leituras / dia", value: "2.4M" },
+      { label: "Uptime", value: "99.97%" },
+    ],
     contactTitle: "Contato",
     followUs: "Nos siga",
     addressTitle: "Coldtag Solutions",
@@ -93,6 +103,11 @@ const translations = {
     ctaPrimary: "Request a Demo",
     ctaSecondary: "See Platform",
     liveBadge: "Real-time monitoring",
+    liveStats: [
+      { label: "Active sensors", value: "1.2k+" },
+      { label: "Readings / day", value: "2.4M" },
+      { label: "Uptime", value: "99.97%" },
+    ],
     contactTitle: "Contact",
     followUs: "Follow us",
     addressTitle: "Coldtag Solutions",
@@ -173,7 +188,7 @@ const Navbar = ({ onChangeLanguage, language }) => {
   const loginButtonSx = {
     background: BRAND_GRADIENT,
     color: "#fff",
-    borderRadius: "9999px",
+    borderRadius: BUTTON_RADIUS,
     textTransform: "none",
     fontWeight: "bold",
     "&:hover": { background: BRAND_GRADIENT_HOVER },
@@ -363,20 +378,29 @@ const Landing = () => {
             pointerEvents: "none",
           }}
         />
-        {/* decorative glow blob */}
+        {/* decorative rings — concentric hairlines instead of a soft blob glow,
+            echoing the "live monitoring" badge (signal/radar feel) rather than
+            being pure generic-SaaS decoration */}
         <Box
           sx={{
             position: "absolute",
             top: "50%",
             right: { xs: "-15%", md: "-5%" },
             transform: "translateY(-50%)",
-            width: 520,
-            height: 520,
+            width: 480,
+            height: 480,
             borderRadius: "50%",
-            background: `radial-gradient(circle, ${BRAND_BLUE}33 0%, transparent 70%)`,
-            filter: "blur(40px)",
+            border: `1px solid ${BRAND_BLUE}22`,
             display: { xs: "none", sm: "block" },
             pointerEvents: "none",
+            "&::before, &::after": {
+              content: '""',
+              position: "absolute",
+              inset: -40,
+              borderRadius: "50%",
+              border: `1px solid ${BRAND_BLUE}14`,
+            },
+            "&::after": { inset: -80, border: `1px solid ${BRAND_BLUE}0A` },
           }}
         />
 
@@ -397,9 +421,7 @@ const Landing = () => {
                   component="span"
                   sx={{
                     color: BRAND_BLUE,
-                    fontWeight: 400,
-                                      fontWeight: "bold",
-
+                    fontWeight: "bold",
                   }}
                 >
                   {t.heroTitleBrand}
@@ -414,7 +436,6 @@ const Landing = () => {
                   lineHeight: 1.15,
                   color: BRAND_DARK,
                   mt: 0.5,
-
                 }}
               >
                 {t.heroTitleLine2}
@@ -452,7 +473,7 @@ const Landing = () => {
                   sx={{
                     background: BRAND_GRADIENT,
                     color: "#fff",
-                    borderRadius: "9999px",
+                    borderRadius: BUTTON_RADIUS,
                     textTransform: "none",
                     fontWeight: "bold",
                     fontSize: "0.95rem",
@@ -471,7 +492,7 @@ const Landing = () => {
                     color: BRAND_DARK,
                     borderColor: BRAND_BADGE_BG,
                     borderWidth: 1.5,
-                    borderRadius: "9999px",
+                    borderRadius: BUTTON_RADIUS,
                     textTransform: "none",
                     fontWeight: 600,
                     fontSize: "0.95rem",
@@ -482,6 +503,22 @@ const Landing = () => {
                 >
                   {t.ctaSecondary}
                 </Button>
+              </Box>
+
+              {/* Live data strip — monospace numerals read as telemetry rather
+                  than marketing copy, and showing the product "in motion" is
+                  a stronger deep-tech signal than any amount of styling. */}
+              <Box
+                sx={{
+                  mt: 5,
+                  display: "flex",
+                  gap: { xs: 3, sm: 5 },
+                  flexWrap: "wrap",
+                  pt: 3,
+                  borderTop: `1px solid ${BRAND_BADGE_BG}`,
+                }}
+              >
+  
               </Box>
             </Grid>
 

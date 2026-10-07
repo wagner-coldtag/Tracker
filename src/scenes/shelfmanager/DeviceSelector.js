@@ -1,86 +1,55 @@
-import {
-  Box,
-  Button,
-  Paper,
-  Popper,
-  ClickAwayListener,
-  List,
-  ListItemButton,
-  ListItemText, useTheme
-} from "@mui/material";
-import React, { useState, useRef } from "react";
+import { MenuItem, TextField, Typography, alpha, useTheme } from "@mui/material";
+import React from "react";
 import { tokens } from "../../theme";
 
-const DeviceSelector = ({ devices, selectedDeviceId, onSelect, label = "Selecionar Dispositivo", colorTheme }) => {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef(null);
+const DeviceSelector = ({ devices, selectedDeviceId, onSelect, label = "Selecionar dispositivo" }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-
-  const handleToggle = () => setOpen(prev => !prev);
-  const handleClickAway = () => setOpen(false);
-
-  const selectedDevice = devices.find(d => d.device_id === selectedDeviceId);
+  const okColor = colors.blueAccent[500];
 
   return (
-    <ClickAwayListener onClickAway={handleClickAway}>
-      <Box>
-        <Button
-          variant="outlined"
-          ref={anchorRef}
-          onClick={handleToggle}
-          fullWidth
-          sx={{
-            height: 56,
-            width: 250,
-            backgroundColor: colors.primary[400],
-            color: selectedDeviceId ? "#2ab4ea" : colors.grey[100],
-            border: `1px solid ${selectedDeviceId ? "#2ab4ea" : "#ddd"}`,
-            justifyContent: "space-between",
-            textTransform: "none",
-            "&:hover": {
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
-              border: `1px solid ${selectedDeviceId ? "#2ab4ea" : "#ccc"}`,
-            },
-          }}
-        >
-          {selectedDevice
-            ? (selectedDevice.name || selectedDevice.device_id)
-            : label}
-        </Button>
-
-        <Popper
-          open={open}
-          anchorEl={anchorRef.current}
-          placement="bottom-start"
-          style={{ zIndex: 1300, width: anchorRef.current?.offsetWidth || 250 }}
-        >
-          <Paper sx={{ maxHeight: 250, overflowY: "auto", width: "100%" }}>
-            <List dense>
-              {devices?.length > 0 ? (
-                devices.map((device) => (
-                  <ListItemButton
-                    key={device.device_id}
-                    onClick={() => {
-                      onSelect(device.device_id);
-                      setOpen(false);
-                    }}
-                    selected={selectedDeviceId === device.device_id}
-                  >
-                    <ListItemText
-                      primary={device.name || device.device_id}
-                      secondary={`${device.company} / ${device.type}`}
-                    />
-                  </ListItemButton>
-                ))
-              ) : (
-                <ListItemText primary="Nenhum dispositivo encontrado." />
-              )}
-            </List>
-          </Paper>
-        </Popper>
-      </Box>
-    </ClickAwayListener>
+    <TextField
+      select
+      fullWidth
+      size="small"
+      label={label}
+      value={selectedDeviceId || ""}
+      onChange={(e) => onSelect(e.target.value)}
+      SelectProps={{
+        MenuProps: { PaperProps: { sx: { maxHeight: 300 } } },
+        renderValue: (value) => {
+          const d = devices?.find((dev) => dev.device_id === value);
+          return d?.name || value;
+        },
+        displayEmpty: true,
+      }}
+      sx={{
+        "& .MuiOutlinedInput-root": {
+          borderRadius: 3,
+          backgroundColor: colors.primary[400],
+          "& fieldset": { borderColor: colors.grey[700] },
+          "&:hover fieldset": { borderColor: okColor },
+          "&.Mui-focused fieldset": { borderColor: okColor, borderWidth: 1 },
+          "&.Mui-focused": { boxShadow: `0 0 0 3px ${alpha(okColor, 0.2)}` },
+        },
+        "& .MuiInputLabel-root.Mui-focused": { color: okColor },
+      }}
+    >
+      {devices?.length > 0 ? (
+        devices.map((device) => (
+          <MenuItem key={device.device_id} value={device.device_id}>
+            <Typography variant="body1">{device.name || device.device_id}</Typography>
+            <Typography variant="caption" sx={{ ml: 1, color: colors.grey[300] }}>
+              {device.company} / {device.type}
+            </Typography>
+          </MenuItem>
+        ))
+      ) : (
+        <MenuItem disabled value="">
+          Nenhum dispositivo encontrado.
+        </MenuItem>
+      )}
+    </TextField>
   );
 };
 

@@ -1,202 +1,383 @@
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import PictureAsPdf from "@mui/icons-material/PictureAsPdf";
+import ShowChart from "@mui/icons-material/ShowChart";
+import Thermostat from "@mui/icons-material/Thermostat";
+import UnfoldMore from "@mui/icons-material/UnfoldMore";
+import WarningAmber from "@mui/icons-material/WarningAmber";
 import {
-  Box, useTheme,
-  Typography,
+  Box,
   Button,
-  Popper,
-  Paper,
-  List,
-  ListItemButton,
-  ListItemText,
-  ClickAwayListener,
+  CircularProgress,
+  MenuItem,
+  TextField,
+  Typography,
+  alpha,
+  useTheme,
 } from "@mui/material";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import React, { useState, useRef, useEffect } from "react";
+import { ptBR } from "date-fns/locale";
+import React, { useState, useEffect } from "react";
 import TemperatureReport from "./Report";
 import Header from "../../components/Header";
 import { tokens } from "../../theme";
 import DateRangePicker from "../dashboard/utils/DataRangePicker";
 import useFetchSensorData from "../dashboard/utils/useFetchSensorData";
 
-const ReportPage = () => {
-  const [isLoadingData, setIsLoadingData] = useState(true);
+const isValidLimit = (v) => v !== undefined && v !== null && v !== "" && !Number.isNaN(Number(v));
 
-  const { devices, setSelectedDevice, selectedDevice, data, startDate, setStartDate, endDate, setEndDate } = useFetchSensorData();
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef(null);
+const formatDate = (d) =>
+  new Date(d).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+/* ---------- Small presentational helpers ---------- */
+
+const Panel = ({ title, subtitle, colors, children }) => (
+  <Box
+    sx={{
+      borderRadius: 3,
+      backgroundColor: colors.primary[400],
+      border: `1px solid ${colors.grey[700]}`,
+      overflow: "hidden",
+    }}
+  >
+    <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${colors.grey[700]}` }}>
+      <Typography variant="h5" fontWeight="600">
+        {title}
+      </Typography>
+      {subtitle && (
+        <Typography variant="body2" sx={{ color: colors.grey[300] }}>
+          {subtitle}
+        </Typography>
+      )}
+    </Box>
+    <Box sx={{ p: 2.5 }}>{children}</Box>
+  </Box>
+);
+
+const StatCard = ({ icon, label, value, color, colors }) => (
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 1.5,
+      p: 1.5,
+      borderRadius: 3,
+      border: `1px solid ${colors.grey[700]}`,
+      backgroundColor: colors.primary[500],
+    }}
+  >
+    <Box
+      sx={{
+        width: 36,
+        height: 36,
+        flexShrink: 0,
+        borderRadius: "50%",
+        backgroundColor: alpha(color, 0.15),
+        color,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" sx={{ color: colors.grey[300] }}>
+        {label}
+      </Typography>
+      <Typography variant="h5" fontWeight="bold" noWrap sx={{ color, lineHeight: 1.2 }}>
+        {value}
+      </Typography>
+    </Box>
+  </Box>
+);
+
+/* ---------- Page ---------- */
+
+const ReportPage = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const okColor = colors.blueAccent[500];
+  const alertColor = colors.alert;
 
-  const now = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(now.getDate() - 1);
-
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [reportDevice, setReportDevice] = useState(null);
 
-  const handleToggle = () => setOpen((prev) => !prev);
-  const handleSelect = (device) => {
-    setReportDevice(device);
-    setSelectedDevice(device.device_id);
-    setOpen(false);
-  };
-  const handleClickAway = () => setOpen(false);
+  const {
+    devices,
+    setSelectedDevice,
+    selectedDevice,
+    data,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+  } = useFetchSensorData();
 
-  const transformedData = data[0]?.data.map((tempPoint) => {
-    const time = tempPoint.x; // keep it as number
-    const temp = typeof tempPoint.y === "number" ? parseFloat(tempPoint.y.toFixed(1)) : 0;
-    return { time, temp };
-  }) || [];
-  React.useEffect(() => {
-    if (selectedDevice && data && data.length > 0 && data[0]?.data?.length > 0) {
-      setIsLoadingData(false);
-    } else {
-      setIsLoadingData(true);
-    }
-  }, [data, selectedDevice]);
+  const hasData = !!(selectedDevice && data && data.length > 0 && data[0]?.data?.length > 0);
+
+  // Loading: cleared when data arrives, set again whenever the request inputs change
+  useEffect(() => {
+    setIsLoadingData(!hasData);
+  }, [data, selectedDevice]); 
+
   useEffect(() => {
     if (selectedDevice && startDate && endDate) {
       setIsLoadingData(true);
     }
   }, [startDate, endDate, selectedDevice]);
 
-  // Desativa o loading quando os dados chegam
-  useEffect(() => {
-    if (selectedDevice && data && data.length > 0 && data[0]?.data?.length > 0) {
-      setIsLoadingData(false);
+  const handleSelect = (event) => {
+    const device = devices.find((d) => d.device_id === event.target.value);
+    if (device) {
+      setReportDevice(device);
+      setSelectedDevice(device.device_id);
     }
-  }, [data, selectedDevice]);
+  };
 
+  // Fall back to the list if the device was selected somewhere else (e.g. hook default)
+  const currentDevice =
+    reportDevice ?? devices?.find((d) => d.device_id === selectedDevice) ?? null;
+
+  const transformedData =
+    data?.[0]?.data?.map((tempPoint) => ({
+      time: tempPoint.x, // seconds, as before
+      temp: typeof tempPoint.y === "number" ? parseFloat(tempPoint.y.toFixed(1)) : 0,
+    })) || [];
+
+  // Summary stats (plain loop: safe for big arrays)
+  const hasMin = isValidLimit(currentDevice?.minTemp);
+  const hasMax = isValidLimit(currentDevice?.maxTemp);
+  let sum = 0;
+  let low = Infinity;
+  let high = -Infinity;
+  let outCount = 0;
+  for (const p of transformedData) {
+    sum += p.temp;
+    if (p.temp < low) low = p.temp;
+    if (p.temp > high) high = p.temp;
+    if ((hasMax && p.temp > Number(currentDevice.maxTemp)) || (hasMin && p.temp < Number(currentDevice.minTemp))) {
+      outCount += 1;
+    }
+  }
+  const count = transformedData.length;
+  const avg = count > 0 ? (sum / count).toFixed(1) : "--";
+
+  const ready = !!(selectedDevice && startDate && endDate);
+
+  const fieldSx = {
+    width: { xs: "100%", sm: 260 },
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: colors.primary[400],
+      borderRadius: 3,
+      "& fieldset": { borderColor: colors.grey[700] },
+      "&:hover fieldset": { borderColor: okColor },
+      "&.Mui-focused fieldset": { borderColor: okColor, borderWidth: 1 },
+      "&.Mui-focused": { boxShadow: `0 0 0 3px ${alpha(okColor, 0.2)}` },
+    },
+    "& .MuiInputLabel-root.Mui-focused": { color: okColor },
+  };
+
+  const downloadButtonSx = {
+    backgroundColor: okColor,
+    color: "#fff",
+    textTransform: "none",
+    fontWeight: 600,
+    borderRadius: 2,
+    px: 3,
+    py: 1,
+    width: { xs: "100%", sm: "auto" },
+    "&:hover": { backgroundColor: alpha(okColor, 0.85) },
+    "&.Mui-disabled": { backgroundColor: alpha(okColor, 0.3), color: "#fff" },
+  };
 
   return (
-    <Box m="20px">
-      <Header title="RELATÓRIOS" subtitle="Geração de relatórios" />
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+      <Box m="20px" display="flex" flexDirection="column" gap={3}>
+        <Header title="GERAÇÃO DE RELATÓRIOS" mb={0} />
 
-      <Typography variant="h6" mt={4} mb={2}>
-        Selecione um dispositivo e intervalo de datas:
-      </Typography>
-
-      <Box
-        display="flex"
-        flexDirection={{ xs: "column", md: "row" }}
-        alignItems="start"
-        gap={2}
-        mb={3}
-      >
-        {/* Device Selector */}
-        <ClickAwayListener onClickAway={handleClickAway}>
-          <Box>
-            <Button
-              variant="outlined"
-              ref={anchorRef}
-              onClick={handleToggle}
-              sx={{ width: 250, height: 54, justifyContent: "space-between", backgroundColor: colors.primary[400], color: colors.grey[100]}}
+        {/* Step 1: choose device and period */}
+        <Panel
+          colors={colors}
+          title="Configuração"
+          subtitle="Escolha o dispositivo e o intervalo de datas do relatório."
+        >
+          <Box
+            display="flex"
+            flexDirection={{ xs: "column", md: "row" }}
+            alignItems={{ xs: "stretch", md: "center" }}
+            gap={2}
+          >
+            <TextField
+              select
+              size="small"
+              label="Dispositivo"
+              value={selectedDevice || ""}
+              onChange={handleSelect}
+              sx={fieldSx}
+              SelectProps={{
+                MenuProps: { PaperProps: { sx: { maxHeight: 300 } } },
+                renderValue: (value) => {
+                  const d = devices?.find((dev) => dev.device_id === value);
+                  return d?.name || value;
+                },
+              }}
             >
-              {selectedDevice
-                ? selectedDevice
-                : "Selecionar Dispositivo"}
-            </Button>
+              {devices?.length > 0 ? (
+                devices.map((device) => (
+                  <MenuItem key={device.device_id} value={device.device_id}>
+                    <Box>
+                      <Typography variant="body1">{device.name || device.device_id}</Typography>
+                      <Typography variant="caption" sx={{ color: colors.grey[300] }}>
+                        {device.company} / {device.type}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled value="">
+                  Nenhum dispositivo encontrado.
+                </MenuItem>
+              )}
+            </TextField>
 
-            <Popper
-              open={open}
-              anchorEl={anchorRef.current}
-              placement="bottom-start"
-              style={{ zIndex: 1300 }}
-            >
-              <Paper sx={{ mt: 1, maxHeight: 250, overflowY: "auto", width: 250 }}>
-                <List dense>
-                  {devices?.length > 0 ? (
-                    devices.map((device) => (
-                      <ListItemButton
-                        key={device.device_id}
-                        onClick={() => handleSelect(device)}
-                        selected={selectedDevice?.id === device.device_id}
-                      >
-                        <ListItemText
-                          primary={device.name || device.device_id}
-                          secondary={`${device?.company} / ${device?.type}`}
-                        />
-                      </ListItemButton>
-                    ))
-                  ) : (
-                    <ListItemText primary="Nenhum dispositivo encontrado." />
-                  )}
-                </List>
-              </Paper>
-            </Popper>
+            <DateRangePicker
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+            />
           </Box>
-        </ClickAwayListener>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <DateRangePicker
-            startDate={startDate}
-            setStartDate={setStartDate}
-            endDate={endDate}
-            setEndDate={setEndDate}
-          />
-        </LocalizationProvider>
-      </Box>
+        </Panel>
 
-      <Typography variant="h6" mb={2}>
-        Gerar Relatório
-      </Typography>
-      {selectedDevice && startDate && endDate ? (
-        isLoadingData ? (
-          <Button
-            variant="contained"
-            disabled
-            sx={{
-              mr: "10px",
-              color: "rgb(42, 180, 234)",
-              backgroundColor: colors.primary[400],
-              borderColor: colors.grey[100],
-              width: "170px",
-              height: "30px",
-            }}
-          >
-      Carregando dados...
-          </Button>
-        ) : (
-          <PDFDownloadLink
-            document={
-              <TemperatureReport
-                device={reportDevice}
-                startDate={startDate}
-                endDate={endDate}
-                data={transformedData}
-              />
-            }
-            fileName={`relatorio-${selectedDevice}.pdf`}
-            style={{ textDecoration: "none" }}
-          >
-            {({ loading }) => (
-              <Button
-                variant="contained"
-                disabled={loading}
-                sx={{
-                  mr: "10px",
-                  color: "rgb(42, 180, 234)",
-                  backgroundColor: colors.primary[400],
-                  borderColor: colors.grey[100],
-                  "&:hover": {
-                    backgroundColor: colors.primary[900],
-                  },
-                  width: "170px",
-                  height: "30px",
-                }}
-              >
-                {loading ? "Gerando..." : "Baixar Relatório PDF"}
-              </Button>
-            )}
-          </PDFDownloadLink>
-        )
-      ) : (
-        <Typography variant="body1" color="textSecondary">
-    Selecione o dispositivo e o intervalo de datas para gerar o relatório.
-        </Typography>
-      )}
-    </Box>
+        {/* Step 2: summary + download */}
+        <Panel colors={colors} title="Relatório">
+          {!ready ? (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                py: 4,
+                color: colors.grey[300],
+                textAlign: "center",
+              }}
+            >
+              <DescriptionOutlined sx={{ fontSize: 48 }} />
+              <Typography variant="h6">
+                Selecione o dispositivo e o intervalo de datas para gerar o relatório.
+              </Typography>
+            </Box>
+          ) : (
+            <Box display="flex" flexDirection="column" gap={2.5}>
+              <Box>
+                <Typography variant="h4" fontWeight="bold">
+                  {currentDevice?.name || selectedDevice}
+                </Typography>
+                <Typography variant="body2" sx={{ color: colors.grey[300] }}>
+                  {[currentDevice?.company, currentDevice?.type].filter(Boolean).join(" / ")}
+                  {currentDevice ? " · " : ""}
+                  {formatDate(startDate)} → {formatDate(endDate)}
+                </Typography>
+              </Box>
+
+              {!isLoadingData && (
+                <Box
+                  sx={{
+                    display: "grid",
+                    gap: 1.5,
+                    gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
+                  }}
+                >
+                  <StatCard
+                    colors={colors}
+                    color={okColor}
+                    icon={<ShowChart fontSize="small" />}
+                    label="Leituras"
+                    value={count}
+                  />
+                  <StatCard
+                    colors={colors}
+                    color={okColor}
+                    icon={<Thermostat fontSize="small" />}
+                    label="Média"
+                    value={avg === "--" ? avg : `${avg}°C`}
+                  />
+                  <StatCard
+                    colors={colors}
+                    color={okColor}
+                    icon={<UnfoldMore fontSize="small" />}
+                    label="Mín. / Máx."
+                    value={count > 0 ? `${low}° / ${high}°` : "--"}
+                  />
+                  <StatCard
+                    colors={colors}
+                    color={outCount > 0 ? alertColor : okColor}
+                    icon={<WarningAmber fontSize="small" />}
+                    label="Fora da faixa"
+                    value={outCount}
+                  />
+                </Box>
+              )}
+
+              <Box>
+                {isLoadingData ? (
+                  <Button
+                    variant="contained"
+                    disabled
+                    disableElevation
+                    startIcon={<CircularProgress size={16} sx={{ color: "#fff" }} />}
+                    sx={downloadButtonSx}
+                  >
+                    Carregando dados...
+                  </Button>
+                ) : (
+                  <PDFDownloadLink
+                    document={
+                      <TemperatureReport
+                        device={currentDevice}
+                        startDate={startDate}
+                        endDate={endDate}
+                        data={transformedData}
+                      />
+                    }
+                    fileName={`relatorio-${selectedDevice}.pdf`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    {({ loading }) => (
+                      <Button
+                        variant="contained"
+                        disabled={loading}
+                        disableElevation
+                        startIcon={
+                          loading ? (
+                            <CircularProgress size={16} sx={{ color: "#fff" }} />
+                          ) : (
+                            <PictureAsPdf />
+                          )
+                        }
+                        sx={downloadButtonSx}
+                      >
+                        {loading ? "Gerando PDF..." : "Baixar relatório PDF"}
+                      </Button>
+                    )}
+                  </PDFDownloadLink>
+                )}
+              </Box>
+            </Box>
+          )}
+        </Panel>
+      </Box>
+    </LocalizationProvider>
   );
 };
 
 export default ReportPage;
-  
